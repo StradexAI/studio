@@ -99,10 +99,10 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                Welcome back, {session?.user?.name || "Consultant"}!
+                Welcome back, {session?.user?.name || &quot;Consultant&quot;}!
               </h1>
               <p className="text-gray-600 mt-1">
-                Here's what's happening with your projects today.
+                Here&apos;s what&apos;s happening with your projects today.
               </p>
             </div>
             <Button className="flex items-center gap-2">
