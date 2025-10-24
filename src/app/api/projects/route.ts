@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createProjectSchema } from "@/lib/validations";
 import { generateDiscoveryToken } from "@/lib/utils/token";
@@ -8,13 +7,10 @@ import { generateDiscoveryToken } from "@/lib/utils/token";
 // GET /api/projects - List projects
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
+    const session = await auth();
+
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -24,7 +20,18 @@ export async function GET(request: NextRequest) {
 
     const where = {
       consultantId: session.user.id,
-      ...(status && { status: status as any }),
+      ...(status && {
+        status: status as
+          | "DISCOVERY"
+          | "PENDING_REVIEW"
+          | "PROPOSAL_DRAFT"
+          | "PROPOSAL_SENT"
+          | "CONTRACTED"
+          | "IN_PROGRESS"
+          | "DEPLOYED"
+          | "COMPLETED"
+          | "CANCELLED",
+      }),
     };
 
     const [projects, total] = await Promise.all([
@@ -76,13 +83,10 @@ export async function GET(request: NextRequest) {
 // POST /api/projects - Create project
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
+    const session = await auth();
+
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -117,7 +121,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Error creating project:", error);
-    
+
     if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { error: "Invalid request data", details: error.message },

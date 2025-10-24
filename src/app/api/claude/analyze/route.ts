@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic({
@@ -152,13 +151,10 @@ IMPORTANT:
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
+    const session = await auth();
+
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -172,14 +168,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Replace placeholders in the prompt with actual data
-    const prompt = DISCOVERY_ANALYSIS_PROMPT
-      .replace("{{clientName}}", discoveryData.clientName || "Unknown")
+    const prompt = DISCOVERY_ANALYSIS_PROMPT.replace(
+      "{{clientName}}",
+      discoveryData.clientName || "Unknown"
+    )
       .replace("{{useCaseName}}", discoveryData.useCaseName || "Unknown")
-      .replace("{{useCaseDescription}}", discoveryData.useCaseDescription || "Unknown")
-      .replace("{{monthlyVolume}}", discoveryData.monthlyVolume?.toString() || "0")
+      .replace(
+        "{{useCaseDescription}}",
+        discoveryData.useCaseDescription || "Unknown"
+      )
+      .replace(
+        "{{monthlyVolume}}",
+        discoveryData.monthlyVolume?.toString() || "0"
+      )
       .replace("{{currentProcess}}", discoveryData.currentProcess || "Unknown")
-      .replace("{{existingSystems}}", discoveryData.existingSystems?.join(", ") || "None")
-      .replace("{{desiredTimeline}}", discoveryData.desiredTimeline || "Unknown");
+      .replace(
+        "{{existingSystems}}",
+        discoveryData.existingSystems?.join(", ") || "None"
+      )
+      .replace(
+        "{{desiredTimeline}}",
+        discoveryData.desiredTimeline || "Unknown"
+      );
 
     // Call Claude API
     const response = await anthropic.messages.create({
@@ -193,8 +203,9 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    const analysisText = response.content[0].type === "text" ? response.content[0].text : "";
-    
+    const analysisText =
+      response.content[0].type === "text" ? response.content[0].text : "";
+
     // Parse the JSON response
     let analysis;
     try {

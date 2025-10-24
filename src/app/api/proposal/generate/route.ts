@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { proposalGenerationSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
+    const session = await auth();
+
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -32,10 +28,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!project) {
-      return NextResponse.json(
-        { error: "Project not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
     if (!project.analysis) {
@@ -63,7 +56,7 @@ export async function POST(request: NextRequest) {
     const proposalContent = {
       executiveSummary: {
         title: `Agentforce Implementation for ${project.clientName}`,
-        overview: `Based on our analysis, we recommend implementing Agentforce to automate your ${project.discoveryResponse?.useCaseName || 'business processes'}.`,
+        overview: `Based on our analysis, we recommend implementing Agentforce to automate your ${project.discoveryResponse?.useCaseName || "business processes"}.`,
         keyBenefits: [
           `Reduce operational costs by ${project.analysis.projectedYear1Savings ? Math.round((project.analysis.projectedYear1Savings / (project.analysis.currentAnnualCost || 1)) * 100) : 50}%`,
           `Improve response times and customer satisfaction`,
@@ -124,7 +117,7 @@ export async function POST(request: NextRequest) {
     });
 
     // TODO: Generate PDF and store in Vercel Blob
-    const pdfUrl = `https://blob.vercel-storage.com/proposals/${project.clientName.toLowerCase().replace(/\s+/g, '-')}-proposal.pdf`;
+    const pdfUrl = `https://blob.vercel-storage.com/proposals/${project.clientName.toLowerCase().replace(/\s+/g, "-")}-proposal.pdf`;
 
     // Update proposal with PDF URL
     await prisma.proposal.update({
@@ -148,7 +141,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Error generating proposal:", error);
-    
+
     if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { error: "Invalid request data", details: error.message },
