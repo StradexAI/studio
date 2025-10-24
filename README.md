@@ -5,13 +5,15 @@ Automation platform for Agentforce consultants that reduces implementation time 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - npm or pnpm
 - PostgreSQL database (Neon recommended)
 
 ### Installation
 
 1. **Clone and setup**
+
    ```bash
    git clone <repository-url>
    cd stradexai-studio
@@ -19,12 +21,14 @@ Automation platform for Agentforce consultants that reduces implementation time 
    ```
 
 2. **Environment Setup**
+
    ```bash
    cp .env.example .env.local
    # Edit .env.local with your values
    ```
 
 3. **Database Setup**
+
    ```bash
    npx prisma generate
    npx prisma migrate dev
@@ -96,11 +100,13 @@ BLOB_READ_WRITE_TOKEN="vercel_blob_..."
 ### Vercel Deployment
 
 1. **Install Vercel CLI**
+
    ```bash
    npm i -g vercel
    ```
 
 2. **Link project**
+
    ```bash
    vercel link
    ```
@@ -120,6 +126,7 @@ BLOB_READ_WRITE_TOKEN="vercel_blob_..."
 ## 📊 Features
 
 ### Phase 1: Discovery Module (Current)
+
 - ✅ Consultant creates project → Get unique discovery link
 - ✅ Discovery wizard (client-facing, no auth)
 - ✅ Client submits discovery → Data saved to database
@@ -129,6 +136,7 @@ BLOB_READ_WRITE_TOKEN="vercel_blob_..."
 - ✅ Send proposal to client via email
 
 ### Future Phases
+
 - **Phase 2**: Code Generation (Weeks 5-8)
 - **Phase 3**: Testing Automation (Weeks 9-10)
 - **Phase 4**: Deployment Integration (Weeks 11-12)
@@ -145,6 +153,7 @@ BLOB_READ_WRITE_TOKEN="vercel_blob_..."
 ## 📝 Development
 
 ### Scripts
+
 ```bash
 npm run dev          # Start development server
 npm run build        # Build for production
@@ -155,6 +164,7 @@ npm run format       # Format with Prettier
 ```
 
 ### Git Workflow
+
 - Use conventional commits
 - Create feature branches
 - Run tests before committing
@@ -175,3 +185,5 @@ npm run format       # Format with Prettier
 ## 🆘 Support
 
 For support and questions, contact [support email].
+
+<!-- Force deployment update -->
