@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -13,6 +14,7 @@ import { Plus, Users, Clock, CheckCircle, AlertCircle } from "lucide-react";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
+  const router = useRouter();
 
   // Mock data - will be replaced with real data from API
   const stats = [
@@ -111,7 +113,10 @@ export default function DashboardPage() {
                 Here&apos;s what&apos;s happening with your projects today.
               </p>
             </div>
-            <Button className="flex items-center gap-2">
+            <Button
+              className="flex items-center gap-2"
+              onClick={() => router.push("/projects/new")}
+            >
               <Plus className="h-4 w-4" />
               New Project
             </Button>
@@ -150,7 +155,8 @@ export default function DashboardPage() {
                 {recentProjects.map((project) => (
                   <div
                     key={project.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/projects/${project.id}`)}
                   >
                     <div>
                       <h3 className="font-medium text-gray-900">
@@ -181,19 +187,35 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <Button variant="outline" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => router.push("/projects/new")}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Create New Project
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => router.push("/projects")}
+                >
                   <Users className="h-4 w-4 mr-2" />
                   View All Projects
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => router.push("/projects")}
+                >
                   <Clock className="h-4 w-4 mr-2" />
                   Review Pending Analysis
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => router.push("/projects")}
+                >
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Generate Proposals
                 </Button>
