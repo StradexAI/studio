@@ -1,7 +1,13 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Users, Clock, CheckCircle, AlertCircle } from "lucide-react";
 
@@ -99,7 +105,7 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                Welcome back, {session?.user?.name || &quot;Consultant&quot;}!
+                Welcome back, {session?.user?.name || "Consultant"}!
               </h1>
               <p className="text-gray-600 mt-1">
                 Here&apos;s what&apos;s happening with your projects today.
@@ -126,9 +132,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {stat.description}
-                </p>
+                <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
               </CardContent>
             </Card>
           ))}
@@ -139,9 +143,7 @@ export default function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Recent Projects</CardTitle>
-              <CardDescription>
-                Your latest project activity
-              </CardDescription>
+              <CardDescription>Your latest project activity</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -155,7 +157,8 @@ export default function DashboardPage() {
                         {project.clientName}
                       </h3>
                       <p className="text-sm text-gray-500">
-                        Created {new Date(project.createdAt).toLocaleDateString()}
+                        Created{" "}
+                        {new Date(project.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                     <span
@@ -174,9 +177,7 @@ export default function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>
-                Common tasks and shortcuts
-              </CardDescription>
+              <CardDescription>Common tasks and shortcuts</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">

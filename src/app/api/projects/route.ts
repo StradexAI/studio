@@ -56,14 +56,23 @@ export async function GET(request: NextRequest) {
       prisma.project.count({ where }),
     ]);
 
-    const projectsWithFlags = projects.map((project) => ({
-      id: project.id,
-      clientName: project.clientName,
-      status: project.status,
-      createdAt: project.createdAt.toISOString(),
-      hasDiscoveryResponse: !!project.discoveryResponse,
-      hasAnalysis: !!project.analysis,
-    }));
+    const projectsWithFlags = projects.map(
+      (project: {
+        id: string;
+        clientName: string;
+        status: string;
+        createdAt: Date;
+        discoveryResponse: { id: string } | null;
+        analysis: { id: string } | null;
+      }) => ({
+        id: project.id,
+        clientName: project.clientName,
+        status: project.status,
+        createdAt: project.createdAt.toISOString(),
+        hasDiscoveryResponse: !!project.discoveryResponse,
+        hasAnalysis: !!project.analysis,
+      })
+    );
 
     return NextResponse.json({
       projects: projectsWithFlags,
