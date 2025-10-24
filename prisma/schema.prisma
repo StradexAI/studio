@@ -1,0 +1,288 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// AUTHENTICATION & USERS
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String?   // For email/password auth
+  role          UserRole  @default(CONSULTANT)
+  
+  // OAuth fields
+  image         String?
+  emailVerified DateTime?
+  
+  // Account info
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Relationships
+  projects      Project[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@map("users")
+}
+
+enum UserRole {
+  CONSULTANT
+  ADMIN
+}
+
+// NextAuth required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+// ============================================
+// CORE BUSINESS MODELS
+// ============================================
+
+model Project {
+  id          String   @id @default(cuid())
+  
+  // Basic info
+  clientName        String
+  clientEmail       String
+  clientContactName String?
+  status            ProjectStatus @default(DISCOVERY)
+  
+  // Discovery
+  discoveryToken    String  @unique  // Used for /discover/[token] link
+  discoveryResponse DiscoveryResponse?
+  
+  // Analysis (AI-generated, consultant-reviewed)
+  analysis          Analysis?
+  
+  // Proposal
+  proposal          Proposal?
+  
+  // Metadata
+  consultantId      String
+  consultant        User     @relation(fields: [consultantId], references: [id])
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([consultantId])
+  @@index([discoveryToken])
+  @@map("projects")
+}
+
+enum ProjectStatus {
+  DISCOVERY           // Client hasn't completed discovery yet
+  PENDING_REVIEW      // Discovery complete, awaiting consultant review
+  PROPOSAL_DRAFT      // Consultant is working on proposal
+  PROPOSAL_SENT       // Proposal sent to client
+  CONTRACTED          // Client signed contract
+  IN_PROGRESS         // Implementation in progress
+  DEPLOYED            // Agent deployed to production
+  COMPLETED           // Project complete
+  CANCELLED           // Project cancelled
+}
+
+model DiscoveryResponse {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  // Use Case Questions
+  useCaseName        String
+  useCaseDescription String   @db.Text
+  
+  // Volume Analysis
+  monthlyVolume      Int
+  channels           String[] // ["email", "chat", "phone"]
+  peakHours          String?
+  
+  // Current Process
+  currentProcess     String   @db.Text  // How handled today
+  currentTeamSize    Int?
+  avgResponseTime    String?
+  currentCsat        Float?
+  
+  // Systems & Data
+  existingSystems    String[] // ["Salesforce", "Zendesk", etc]
+  dataInSalesforce   Boolean
+  hasApis            Boolean
+  apiDetails         String?  @db.Text
+  
+  // Success Metrics
+  successMetrics     String[] // What defines success
+  desiredTimeline    String
+  
+  // Additional context
+  additionalNotes    String?  @db.Text
+  
+  // Metadata
+  submittedAt        DateTime @default(now())
+  ipAddress          String?
+  userAgent          String?
+  
+  @@map("discovery_responses")
+}
+
+model Analysis {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  // AI-Generated Analysis (stored as JSON)
+  opportunityScore      Int      // 0-100
+  scoringBreakdown      Json     // {volume: 19, repeatability: 18, ...}
+  aiInsights            Json     // Array of insight objects
+  
+  // Recommended Architecture
+  recommendedTopics     Json     // Array of topic objects
+  recommendedActions    Json     // Array of action objects
+  recommendedVariables  Json     // Array of variable objects
+  integrationRequirements Json   // Required integrations
+  
+  // Cost Estimates
+  estimatedImplementationCost Int
+  estimatedMonthlyCost        Int
+  estimatedAnnualCost         Int
+  
+  // ROI Projections
+  currentAnnualCost     Int?
+  projectedYear1Savings Int?
+  paybackMonths         Float?
+  threeYearRoi          Float?
+  
+  // Consultant Review
+  consultantReviewed    Boolean  @default(false)
+  consultantNotes       String?  @db.Text
+  customizations        Json?    // Any consultant modifications
+  
+  // Metadata
+  generatedAt           DateTime @default(now())
+  reviewedAt            DateTime?
+  
+  @@map("analysis_results")
+}
+
+model Proposal {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  // Proposal Content (JSON for flexibility)
+  executiveSummary   Json
+  architecture       Json
+  timeline           Json
+  pricingOptions     Json     // Array of pricing tiers
+  caseStudies        Json     // Selected case studies
+  terms              Json
+  
+  // Status
+  status             ProposalStatus @default(DRAFT)
+  
+  // File Generation
+  pdfGenerated       Boolean  @default(false)
+  pdfUrl             String?  // Vercel Blob URL
+  
+  // Client Interaction
+  sentToClientAt     DateTime?
+  viewedByClientAt   DateTime?
+  clientFeedback     String?  @db.Text
+  
+  // Metadata
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  @@map("proposals")
+}
+
+enum ProposalStatus {
+  DRAFT
+  READY_TO_SEND
+  SENT
+  VIEWED
+  ACCEPTED
+  REJECTED
+}
+
+model GeneratedFile {
+  id          String   @id @default(cuid())
+  projectId   String
+  
+  // File details
+  fileName    String
+  fileType    String   // "proposal_pdf", "architecture_diagram", etc
+  fileUrl     String   // Vercel Blob URL
+  fileSize    Int      // bytes
+  mimeType    String
+  
+  // Metadata
+  generatedAt DateTime @default(now())
+  
+  @@index([projectId])
+  @@map("generated_files")
+}
+
+// ============================================
+// AUDIT & LOGGING
+// ============================================
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  
+  // What happened
+  action      String   // "project_created", "discovery_submitted", etc
+  entityType  String   // "project", "proposal", etc
+  entityId    String
+  
+  // Who did it
+  userId      String?
+  ipAddress   String?
+  userAgent   String?
+  
+  // Additional data
+  metadata    Json?
+  
+  // When
+  createdAt   DateTime @default(now())
+  
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@map("audit_logs")
+}
