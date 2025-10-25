@@ -2,39 +2,51 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckCircle } from "lucide-react";
+import DiscoveryForm from "@/components/discovery/DiscoveryForm";
 
 export default function DiscoverPage() {
   const params = useParams();
   const token = params.token as string;
   const [isValidating, setIsValidating] = useState(true);
   const [isValid, setIsValid] = useState(false);
-  const [project, setProject] = useState<any>(null);
+  const [project, setProject] = useState<{
+    id: string;
+    clientName: string;
+    status: string;
+  } | null>(null);
   const [error, setError] = useState("");
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
+    const validateToken = async () => {
+      try {
+        const response = await fetch(`/api/discovery/${token}`);
+        const data = await response.json();
+
+        if (data.valid) {
+          setIsValid(true);
+          setProject(data.project);
+        } else {
+          setError(data.error || "Invalid discovery link");
+        }
+      } catch {
+        setError("Failed to validate discovery link");
+      } finally {
+        setIsValidating(false);
+      }
+    };
+
     validateToken();
   }, [token]);
-
-  const validateToken = async () => {
-    try {
-      const response = await fetch(`/api/discovery/${token}`);
-      const data = await response.json();
-
-      if (data.valid) {
-        setIsValid(true);
-        setProject(data.project);
-      } else {
-        setError(data.error || "Invalid discovery link");
-      }
-    } catch (error) {
-      setError("Failed to validate discovery link");
-    } finally {
-      setIsValidating(false);
-    }
-  };
 
   if (isValidating) {
     return (
@@ -61,13 +73,20 @@ export default function DiscoverPage() {
             <p className="text-sm text-gray-600 mb-4">
               Please contact your consultant for a new discovery link.
             </p>
-            <Button variant="outline" onClick={() => window.location.href = "/"}>
+            <Button
+              variant="outline"
+              onClick={() => (window.location.href = "/")}
+            >
               Return to Home
             </Button>
           </CardContent>
         </Card>
       </div>
     );
+  }
+
+  if (showForm) {
+    return <DiscoveryForm project={project} token={token} />;
   }
 
   return (
@@ -79,7 +98,7 @@ export default function DiscoverPage() {
           </div>
           <CardTitle className="text-xl">Welcome!</CardTitle>
           <CardDescription>
-            You've been invited to complete a discovery questionnaire for{" "}
+            You&apos;ve been invited to complete a discovery questionnaire for{" "}
             <strong>{project?.clientName}</strong>
           </CardDescription>
         </CardHeader>
@@ -93,13 +112,18 @@ export default function DiscoverPage() {
               Estimated time: 15-20 minutes
             </p>
           </div>
-          
-          <Button className="w-full" size="lg">
+
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={() => setShowForm(true)}
+          >
             Start Discovery Questionnaire
           </Button>
-          
+
           <div className="text-center text-xs text-gray-500">
-            Your responses are confidential and will only be shared with your consultant.
+            Your responses are confidential and will only be shared with your
+            consultant.
           </div>
         </CardContent>
       </Card>

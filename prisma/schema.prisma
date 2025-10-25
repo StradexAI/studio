@@ -125,40 +125,62 @@ model DiscoveryResponse {
   projectId String   @unique
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   
-  // Use Case Questions
-  useCaseName        String
-  useCaseDescription String   @db.Text
+  // Section 1: Company & Contact Information
+  companyName         String
+  contactName         String
+  contactEmail        String
+  contactRole         String
   
-  // Volume Analysis
-  monthlyVolume      Int
-  channels           String[] // ["email", "chat", "phone"]
-  peakHours          String?
+  // Section 2: Department & Use Case
+  primaryDepartment   String
+  useCases            String[]  // Array of selected use cases
+  visionDescription   String    @db.Text
   
-  // Current Process
-  currentProcess     String   @db.Text  // How handled today
-  currentTeamSize    Int?
-  avgResponseTime    String?
-  currentCsat        Float?
+  // Section 3: Business Objectives
+  primaryObjective    String
+  automationTarget    String?
+  successDefinition   String    @db.Text
+  currentMetrics      String?   @db.Text
   
-  // Systems & Data
-  existingSystems    String[] // ["Salesforce", "Zendesk", etc]
-  dataInSalesforce   Boolean
-  hasApis            Boolean
-  apiDetails         String?  @db.Text
+  // Section 4: Current Process
+  currentChannels     String[]
+  monthlyVolume       String?
+  painPoints          String    @db.Text
+  commonQuestions     String?   @db.Text
   
-  // Success Metrics
-  successMetrics     String[] // What defines success
-  desiredTimeline    String
+  // Section 5: Technical Context
+  usesSalesforce      String
+  salesforceProducts  String[]
+  dataStorageLocations String[]
+  systemsToIntegrate  String?   @db.Text
   
-  // Additional context
-  additionalNotes    String?  @db.Text
+  // Section 6: Success Criteria & Constraints
+  targetLaunchDate    String?
+  budgetRange         String?
+  requirements        String?   @db.Text
+  
+  // Section 7: Additional Context
+  concerns            String[]
+  referralSource      String?
+  additionalContext   String?   @db.Text
+  wantsConsultation   String
+  bestTimeToReach     String?
   
   // Metadata
-  submittedAt        DateTime @default(now())
-  ipAddress          String?
-  userAgent          String?
+  status              ResponseStatus @default(IN_PROGRESS)
+  currentSection      Int @default(1)
+  completedAt         DateTime?
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
   
   @@map("discovery_responses")
+}
+
+enum ResponseStatus {
+  IN_PROGRESS
+  COMPLETED
+  PROPOSAL_GENERATED
 }
 
 model Analysis {
