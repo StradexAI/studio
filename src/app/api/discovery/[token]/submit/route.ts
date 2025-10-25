@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { discoveryFormSchema } from "@/lib/validations";
 
 export async function POST(
   request: NextRequest,
@@ -8,10 +7,24 @@ export async function POST(
 ) {
   try {
     const { token } = params;
-    const body = await request.json();
-    
-    // Validate the discovery form data
-    const validatedData = discoveryFormSchema.parse(body);
+    const formData = await request.json();
+
+    // Basic validation for required fields
+    if (
+      !formData.companyName ||
+      !formData.contactName ||
+      !formData.contactEmail ||
+      !formData.contactRole
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Missing required fields: company name, contact name, email, or role",
+        },
+        { status: 400 }
+      );
+    }
 
     // Find the project by discovery token
     const project = await prisma.project.findUnique({
@@ -37,7 +50,7 @@ export async function POST(
       },
     });
 
-    if (existingResponse) {
+    if (existingResponse && formData.status === "COMPLETED") {
       return NextResponse.json(
         {
           success: false,
@@ -47,62 +60,41 @@ export async function POST(
       );
     }
 
-    // Create the discovery response
-    await prisma.discoveryResponse.create({
-      data: {
-        projectId: project.id,
-        useCaseName: validatedData.useCaseName,
-        useCaseDescription: validatedData.useCaseDescription,
-        monthlyVolume: validatedData.monthlyVolume,
-        channels: validatedData.channels,
-        peakHours: validatedData.peakHours,
-        currentProcess: validatedData.currentProcess,
-        currentTeamSize: validatedData.currentTeamSize,
-        avgResponseTime: validatedData.avgResponseTime,
-        currentCsat: validatedData.currentCsat,
-        existingSystems: validatedData.existingSystems,
-        dataInSalesforce: validatedData.dataInSalesforce,
-        hasApis: validatedData.hasApis,
-        apiDetails: validatedData.apiDetails,
-        successMetrics: validatedData.successMetrics,
-        desiredTimeline: validatedData.desiredTimeline,
-        additionalNotes: validatedData.additionalNotes,
-        ipAddress: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown",
-        userAgent: request.headers.get("user-agent") || "unknown",
-      },
-    });
+    // Create or update the discovery response with the new comprehensive schema
+    const discoveryResponse = existingResponse
+      ? await prisma.discoveryResponse.update({
+          where: { projectId: project.id },
+          data: {
+            ...formData,
+            updatedAt: new Date(),
+          },
+        })
+      : await prisma.discoveryResponse.create({
+          data: {
+            projectId: project.id,
+            ...formData,
+          },
+        });
 
-    // Update project status to PENDING_REVIEW
-    await prisma.project.update({
-      where: {
-        id: project.id,
-      },
-      data: {
-        status: "PENDING_REVIEW",
-      },
-    });
-
-    // TODO: Send email notification to consultant
-    // TODO: Trigger AI analysis generation
+    // Update project status if completed
+    if (formData.status === "COMPLETED") {
+      await prisma.project.update({
+        where: {
+          id: project.id,
+        },
+        data: {
+          status: "PENDING_REVIEW",
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,
       message: "Discovery submitted successfully",
-      projectId: project.id,
+      discoveryResponse,
     });
   } catch (error) {
     console.error("Error submitting discovery:", error);
-    
-    if (error instanceof Error && error.name === "ZodError") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid form data",
-          details: error.message,
-        },
-        { status: 400 }
-      );
-    }
 
     return NextResponse.json(
       {
