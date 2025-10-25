@@ -1,16 +1,7 @@
 // Core types for the application
-export type ProjectStatus = 
-  | "DISCOVERY"
-  | "PENDING_REVIEW"
-  | "PROPOSAL_DRAFT"
-  | "PROPOSAL_SENT"
-  | "CONTRACTED"
-  | "IN_PROGRESS"
-  | "DEPLOYED"
-  | "COMPLETED"
-  | "CANCELLED";
+export type UserRole = "CONSULTANT" | "ADMIN";
 
-export type ProposalStatus = 
+export type ProposalStatus =
   | "DRAFT"
   | "READY_TO_SEND"
   | "SENT"
@@ -18,9 +9,7 @@ export type ProposalStatus =
   | "ACCEPTED"
   | "REJECTED";
 
-export type UserRole = "CONSULTANT" | "ADMIN";
-
-// Discovery form types
+// Legacy discovery form types (for backward compatibility)
 export interface DiscoveryFormData {
   useCaseName: string;
   useCaseDescription: string;
@@ -40,7 +29,7 @@ export interface DiscoveryFormData {
   additionalNotes?: string;
 }
 
-// Analysis types
+// Legacy analysis types (for backward compatibility with existing Claude API)
 export interface AnalysisResult {
   opportunityScore: number;
   scoringBreakdown: {
@@ -117,6 +106,9 @@ export interface AnalysisResult {
     };
   };
 }
+
+// Re-export analysis types from the dedicated file
+export * from "./analysis";
 
 // API response types
 export interface ApiResponse<T = any> {

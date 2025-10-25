@@ -28,27 +28,22 @@ import {
   X,
   Plus,
   Trash2,
+  RefreshCw,
+  Database,
 } from "lucide-react";
-
-interface Analysis {
-  id: string;
-  opportunityScore: number;
-  scoringBreakdown: {
-    automationPotential: number;
-    costSavings: number;
-    implementationComplexity: number;
-    businessImpact: number;
-  };
-  aiInsights: string;
-  recommendedTopics: string[];
-  recommendedActions: string[];
-  estimatedImplementationCost: number;
-  estimatedMonthlyCost: number;
-  projectedYear1Savings: number;
-  paybackMonths: number;
-  generatedAt: string;
-  consultantReviewed: boolean;
-}
+import { DiscoveryDataEditor } from "@/components/analysis/DiscoveryDataEditor";
+import { UseCaseCard } from "@/components/analysis/UseCaseCard";
+import { PlatformRequirementsCard } from "@/components/analysis/PlatformRequirementsCard";
+import {
+  Analysis,
+  ScoringBreakdown,
+  getScoreLabel,
+  getScoreColor,
+  calculateOpportunityScore,
+  DiscoveryResponse,
+  AgentforceUseCase,
+  PlatformRequirements,
+} from "@/types/analysis";
 
 interface Project {
   id: string;
@@ -69,6 +64,12 @@ export default function AnalysisPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+
+  // Discovery data state
+  const [discoveryData, setDiscoveryData] = useState<DiscoveryResponse | null>(
+    null
+  );
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Editable state
   const [editedAnalysis, setEditedAnalysis] = useState<Analysis | null>(null);
@@ -91,6 +92,15 @@ export default function AnalysisPage() {
       const projectData = await projectResponse.json();
       setProject(projectData);
 
+      // Fetch discovery data
+      const discoveryResponse = await fetch(
+        `/api/projects/${projectId}/discovery`
+      );
+      if (discoveryResponse.ok) {
+        const discoveryData = await discoveryResponse.json();
+        setDiscoveryData(discoveryData.discoveryResponse);
+      }
+
       // Fetch analysis
       const analysisResponse = await fetch(
         `/api/projects/${projectId}/analysis`
@@ -110,6 +120,35 @@ export default function AnalysisPage() {
       console.error("Error fetching analysis:", error);
       setError(
         error instanceof Error ? error.message : "Failed to load analysis"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateAnalysis = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch(`/api/projects/${projectId}/analysis`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate analysis");
+      }
+
+      // After generating, fetch the new analysis
+      await fetchAnalysis();
+    } catch (error) {
+      console.error("Error generating analysis:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to generate analysis"
       );
     } finally {
       setLoading(false);
@@ -156,10 +195,78 @@ export default function AnalysisPage() {
     setNewAction("");
   };
 
-  const updateBreakdownScore = (
-    key: keyof Analysis["scoringBreakdown"],
-    value: number
-  ) => {
+  // Handle discovery data updates
+  const handleDiscoveryUpdate = async (updatedData: DiscoveryResponse) => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}/discovery`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update discovery data");
+      }
+
+      setDiscoveryData(updatedData);
+
+      // If analysis exists, mark it as needing regeneration
+      if (analysis) {
+        setAnalysis((prev) =>
+          prev ? { ...prev, consultantReviewed: false } : null
+        );
+        setEditedAnalysis((prev) =>
+          prev ? { ...prev, consultantReviewed: false } : null
+        );
+      }
+    } catch (error) {
+      console.error("Error updating discovery data:", error);
+      throw error;
+    }
+  };
+
+  // Regenerate analysis with updated discovery data
+  const regenerateAnalysis = async () => {
+    try {
+      setIsRegenerating(true);
+      setError("");
+
+      // Delete existing analysis first
+      if (analysis) {
+        await fetch(`/api/projects/${projectId}/analysis`, {
+          method: "DELETE",
+        });
+      }
+
+      // Generate new analysis
+      const response = await fetch(`/api/projects/${projectId}/analysis`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to regenerate analysis");
+      }
+
+      // Fetch the new analysis
+      await fetchAnalysis();
+    } catch (error) {
+      console.error("Error regenerating analysis:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to regenerate analysis"
+      );
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  const updateBreakdownScore = (key: keyof ScoringBreakdown, value: number) => {
     if (!editedAnalysis) return;
 
     const newBreakdown = {
@@ -167,11 +274,8 @@ export default function AnalysisPage() {
       [key]: value,
     };
 
-    // Recalculate opportunity score as average of breakdown scores
-    const scores = Object.values(newBreakdown);
-    const avgScore = Math.round(
-      scores.reduce((a, b) => a + b, 0) / scores.length
-    );
+    // Recalculate opportunity score using the helper function
+    const avgScore = calculateOpportunityScore(newBreakdown);
 
     setEditedAnalysis({
       ...editedAnalysis,
@@ -225,17 +329,7 @@ export default function AnalysisPage() {
     });
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-600 bg-green-100";
-    if (score >= 60) return "text-yellow-600 bg-yellow-100";
-    return "text-red-600 bg-red-100";
-  };
-
-  const getScoreLabel = (score: number) => {
-    if (score >= 80) return "High Opportunity";
-    if (score >= 60) return "Medium Opportunity";
-    return "Low Opportunity";
-  };
+  // Helper functions are now imported from types/analysis
 
   if (loading) {
     return (
@@ -266,10 +360,7 @@ export default function AnalysisPage() {
               Back to Project
             </Button>
             {error.includes("Analysis not found") && (
-              <Button
-                className="w-full"
-                onClick={() => router.push(`/projects/${projectId}`)}
-              >
+              <Button className="w-full" onClick={generateAnalysis}>
                 Generate Analysis
               </Button>
             )}
@@ -364,34 +455,97 @@ export default function AnalysisPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Discovery Data Editor */}
+        {discoveryData && (
+          <div className="mb-8">
+            <DiscoveryDataEditor
+              projectId={projectId}
+              initialData={discoveryData}
+              onSave={handleDiscoveryUpdate}
+              onCancel={() => {}}
+            />
+
+            {/* Regenerate Analysis Button */}
+            {analysis && !analysis.consultantReviewed && (
+              <div className="mt-4 flex justify-center">
+                <Button
+                  onClick={regenerateAnalysis}
+                  disabled={isRegenerating}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  {isRegenerating ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      Regenerating Analysis...
+                    </>
+                  ) : (
+                    <>
+                      <Database className="h-4 w-4" />
+                      Regenerate Analysis with Updated Data
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Opportunity Score */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Opportunity Score
-                </CardTitle>
-                <CardDescription>
-                  Overall assessment of the AI agent opportunity
-                  {isEditing && " (calculated from breakdown scores)"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <div
-                    className={`inline-flex items-center justify-center w-24 h-24 rounded-full text-3xl font-bold ${getScoreColor(displayData.opportunityScore)}`}
-                  >
-                    {displayData.opportunityScore}
+            {/* Opportunity Scores */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Opportunity Score
+                  </CardTitle>
+                  <CardDescription>
+                    Overall AI automation potential
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center">
+                    <div
+                      className={`inline-flex items-center justify-center w-20 h-20 rounded-full text-2xl font-bold ${getScoreColor(displayData.opportunityScore).text} ${getScoreColor(displayData.opportunityScore).bg}`}
+                    >
+                      {displayData.opportunityScore}
+                    </div>
+                    <p className="text-lg font-semibold mt-2">
+                      {getScoreLabel(displayData.opportunityScore)}
+                    </p>
                   </div>
-                  <p className="text-lg font-semibold mt-2">
-                    {getScoreLabel(displayData.opportunityScore)}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Database className="h-5 w-5" />
+                    Agentforce Fit Score
+                  </CardTitle>
+                  <CardDescription>
+                    How well suited for Agentforce platform
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center">
+                    <div
+                      className={`inline-flex items-center justify-center w-20 h-20 rounded-full text-2xl font-bold ${getScoreColor((displayData as any).agentforceFitScore || 0).text} ${getScoreColor((displayData as any).agentforceFitScore || 0).bg}`}
+                    >
+                      {(displayData as any).agentforceFitScore || 0}
+                    </div>
+                    <p className="text-lg font-semibold mt-2">
+                      {getScoreLabel(
+                        (displayData as any).agentforceFitScore || 0
+                      )}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Scoring Breakdown */}
             <Card>
@@ -417,7 +571,7 @@ export default function AnalysisPage() {
                             value={[score]}
                             onValueChange={(value) =>
                               updateBreakdownScore(
-                                key as keyof Analysis["scoringBreakdown"],
+                                key as keyof ScoringBreakdown,
                                 value[0]
                               )
                             }
@@ -440,151 +594,185 @@ export default function AnalysisPage() {
               </CardContent>
             </Card>
 
-            {/* AI Insights */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  AI Insights
-                </CardTitle>
-                <CardDescription>
-                  Key findings and recommendations from the analysis
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isEditing ? (
-                  <Textarea
-                    value={editedAnalysis.aiInsights}
-                    onChange={(e) =>
-                      setEditedAnalysis({
-                        ...editedAnalysis,
-                        aiInsights: e.target.value,
-                      })
-                    }
-                    rows={10}
-                    className="w-full"
-                    placeholder="Enter AI insights and recommendations..."
-                  />
-                ) : (
-                  <div className="prose max-w-none">
-                    <p className="text-gray-700 whitespace-pre-wrap">
-                      {displayData.aiInsights}
-                    </p>
-                  </div>
+            {/* Platform Requirements */}
+            {(displayData as any).platformRequirements && (
+              <PlatformRequirementsCard
+                requirements={(displayData as any).platformRequirements}
+              />
+            )}
+
+            {/* Use Cases */}
+            {(displayData as any).useCases &&
+            Array.isArray((displayData as any).useCases) ? (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Agentforce Use Cases
+                  </h2>
+                  <p className="text-gray-600">
+                    Three prioritized use cases with complete implementation
+                    details
+                  </p>
+                </div>
+                {(displayData as any).useCases.map(
+                  (useCase: AgentforceUseCase, index: number) => (
+                    <UseCaseCard key={index} useCase={useCase} index={index} />
+                  )
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Recommended Topics */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recommended Topics</CardTitle>
-                <CardDescription>
-                  Key areas the AI agent should focus on
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    {displayData.recommendedTopics.map((topic, index) => (
-                      <Badge
-                        key={index}
-                        variant="outline"
-                        className="flex items-center gap-1"
-                      >
-                        {topic}
-                        {isEditing && (
-                          <button
-                            onClick={() => removeTopic(index)}
-                            className="ml-1 hover:text-red-600"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
-
-                  {isEditing && (
-                    <div className="flex gap-2">
-                      <Input
-                        value={newTopic}
-                        onChange={(e) => setNewTopic(e.target.value)}
-                        placeholder="Add a new topic..."
-                        onKeyPress={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            addTopic();
-                          }
-                        }}
+              </div>
+            ) : (
+              /* Fallback for legacy analysis format */
+              <>
+                {/* AI Insights */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      AI Insights
+                    </CardTitle>
+                    <CardDescription>
+                      Key findings and recommendations from the analysis
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isEditing ? (
+                      <Textarea
+                        value={editedAnalysis.aiInsights}
+                        onChange={(e) =>
+                          setEditedAnalysis({
+                            ...editedAnalysis,
+                            aiInsights: e.target.value,
+                          })
+                        }
+                        rows={10}
+                        className="w-full"
+                        placeholder="Enter AI insights and recommendations..."
                       />
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={addTopic}
-                        disabled={!newTopic.trim()}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                    ) : (
+                      <div className="prose max-w-none">
+                        <p className="text-gray-700 whitespace-pre-wrap">
+                          {displayData.aiInsights}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-            {/* Recommended Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recommended Actions</CardTitle>
-                <CardDescription>
-                  Next steps for implementing the AI agent solution
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <ul className="space-y-2">
-                    {displayData.recommendedActions.map((action, index) => (
-                      <li key={index} className="flex items-start gap-2 group">
-                        <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm flex-1">{action}</span>
-                        {isEditing && (
-                          <button
-                            onClick={() => removeAction(index)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-600"
+                {/* Recommended Topics */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recommended Topics</CardTitle>
+                    <CardDescription>
+                      Key areas the AI agent should focus on
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap gap-2">
+                        {displayData.recommendedTopics.map((topic, index) => (
+                          <Badge
+                            key={index}
+                            variant="outline"
+                            className="flex items-center gap-1"
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+                            {topic}
+                            {isEditing && (
+                              <button
+                                onClick={() => removeTopic(index)}
+                                className="ml-1 hover:text-red-600"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </Badge>
+                        ))}
+                      </div>
 
-                  {isEditing && (
-                    <div className="flex gap-2">
-                      <Input
-                        value={newAction}
-                        onChange={(e) => setNewAction(e.target.value)}
-                        placeholder="Add a new action..."
-                        onKeyPress={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            addAction();
-                          }
-                        }}
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={addAction}
-                        disabled={!newAction.trim()}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
+                      {isEditing && (
+                        <div className="flex gap-2">
+                          <Input
+                            value={newTopic}
+                            onChange={(e) => setNewTopic(e.target.value)}
+                            placeholder="Add a new topic..."
+                            onKeyPress={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                addTopic();
+                              }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={addTopic}
+                            disabled={!newTopic.trim()}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+
+                {/* Recommended Actions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recommended Actions</CardTitle>
+                    <CardDescription>
+                      Next steps for implementing the AI agent solution
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <ul className="space-y-2">
+                        {displayData.recommendedActions.map((action, index) => (
+                          <li
+                            key={index}
+                            className="flex items-start gap-2 group"
+                          >
+                            <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm flex-1">{action}</span>
+                            {isEditing && (
+                              <button
+                                onClick={() => removeAction(index)}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+
+                      {isEditing && (
+                        <div className="flex gap-2">
+                          <Input
+                            value={newAction}
+                            onChange={(e) => setNewAction(e.target.value)}
+                            placeholder="Add a new action..."
+                            onKeyPress={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                addAction();
+                              }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={addAction}
+                            disabled={!newAction.trim()}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
 
           {/* Sidebar */}

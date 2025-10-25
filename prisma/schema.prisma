@@ -188,18 +188,17 @@ model Analysis {
   projectId String   @unique
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   
-  // AI-Generated Analysis (stored as JSON)
+  // Overall Agentforce Fit Assessment
   opportunityScore      Int      // 0-100
-  scoringBreakdown      Json     // {volume: 19, repeatability: 18, ...}
-  aiInsights            Json     // Array of insight objects
+  agentforceFitScore    Int      // 0-100 - how well suited for Agentforce
   
-  // Recommended Architecture
-  recommendedTopics     Json     // Array of topic objects
-  recommendedActions    Json     // Array of action objects
-  recommendedVariables  Json     // Array of variable objects
-  integrationRequirements Json   // Required integrations
+  // Three Use Cases (stored as JSON array)
+  useCases              Json     // Array of 3 use case objects with full details
   
-  // Cost Estimates
+  // Agentforce Platform Requirements
+  platformRequirements  Json     // Salesforce products, Data Cloud needs, etc.
+  
+  // Cost Estimates (aggregate across 3 use cases)
   estimatedImplementationCost Int
   estimatedMonthlyCost        Int
   estimatedAnnualCost         Int
@@ -213,7 +212,7 @@ model Analysis {
   // Consultant Review
   consultantReviewed    Boolean  @default(false)
   consultantNotes       String?  @db.Text
-  customizations        Json?    // Any consultant modifications
+  customizations        Json?
   
   // Metadata
   generatedAt           DateTime @default(now())
