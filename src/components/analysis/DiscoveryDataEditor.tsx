@@ -80,7 +80,11 @@ export function DiscoveryDataEditor({
   };
 
   const getFieldValue = (field: keyof DiscoveryResponse): string => {
-    return editedData[field] || "";
+    const value = editedData[field];
+    if (Array.isArray(value)) {
+      return value.join(", ");
+    }
+    return (value as string) || "";
   };
 
   const isFieldRequired = (field: keyof DiscoveryResponse): boolean => {

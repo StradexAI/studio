@@ -64,9 +64,8 @@ export async function POST(request: NextRequest) {
         ],
       },
       architecture: {
-        topics: project.analysis.recommendedTopics,
-        actions: project.analysis.recommendedActions,
-        integrations: project.analysis.integrationRequirements,
+        useCases: project.analysis.useCases,
+        platformRequirements: project.analysis.platformRequirements,
       },
       timeline: {
         phases: [

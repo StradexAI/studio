@@ -85,33 +85,62 @@ export interface ClaudeAgentforceResponse {
  * This is the data structure collected from clients during the discovery phase
  */
 export interface DiscoveryResponse {
-  // Core Business Information
+  // Section 1: Company & Contact Information
   companyName?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactRole?: string;
+
+  // Section 2: Department & Use Case
+  primaryDepartment?: string;
+  useCases?: string[]; // Array of selected use cases
+  visionDescription?: string;
+
+  // Section 3: Business Objectives
+  primaryObjective?: string;
+  automationTarget?: string;
+  successDefinition?: string;
+  currentMetrics?: string;
+
+  // Section 4: Current Process
+  currentChannels?: string[];
+  monthlyVolume?: string;
+  painPoints?: string;
+  commonQuestions?: string;
+
+  // Section 5: Technical Context
+  usesSalesforce?: string;
+  salesforceProducts?: string[];
+  dataStorageLocations?: string[];
+  systemsToIntegrate?: string;
+
+  // Section 6: Success Criteria & Constraints
+  targetLaunchDate?: string;
+  budgetRange?: string;
+  requirements?: string;
+
+  // Section 7: Additional Context
+  concerns?: string[];
+  referralSource?: string;
+  additionalContext?: string;
+  wantsConsultation?: string;
+  bestTimeToReach?: string;
+
+  // Legacy fields for backward compatibility
   industry?: string;
   companySize?: string;
-
-  // Current Processes
   currentProcesses?: string;
-  painPoints?: string;
   manualTasks?: string;
   timeSpentOnTasks?: string;
-
-  // Goals and Objectives
   businessGoals?: string;
   expectedOutcomes?: string;
   successMetrics?: string;
-
-  // Technical Information
   currentSystems?: string;
   dataAvailability?: string;
   technicalConstraints?: string;
-
-  // Budget and Timeline
   budget?: string;
   timeline?: string;
   priorityLevel?: string;
-
-  // Additional Context
   additionalInfo?: string;
   specificRequirements?: string;
 }

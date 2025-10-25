@@ -214,16 +214,20 @@ export async function GET(
     return NextResponse.json({
       id: analysis.id,
       opportunityScore: analysis.opportunityScore,
-      scoringBreakdown: analysis.scoringBreakdown,
-      aiInsights: analysis.aiInsights,
-      recommendedTopics: analysis.recommendedTopics,
-      recommendedActions: analysis.recommendedActions,
+      agentforceFitScore: analysis.agentforceFitScore,
+      useCases: analysis.useCases,
+      platformRequirements: analysis.platformRequirements,
       estimatedImplementationCost: analysis.estimatedImplementationCost,
       estimatedMonthlyCost: analysis.estimatedMonthlyCost,
+      estimatedAnnualCost: analysis.estimatedAnnualCost,
+      currentAnnualCost: analysis.currentAnnualCost,
       projectedYear1Savings: analysis.projectedYear1Savings,
       paybackMonths: analysis.paybackMonths,
+      threeYearRoi: analysis.threeYearRoi,
       generatedAt: analysis.generatedAt.toISOString(),
       consultantReviewed: analysis.consultantReviewed,
+      consultantNotes: analysis.consultantNotes,
+      customizations: analysis.customizations,
     });
   } catch (error) {
     console.error("Error fetching analysis:", error);
@@ -271,22 +275,26 @@ export async function PATCH(
       );
     }
 
-    // Update the analysis
+    // Update the analysis with new Agentforce structure
     const updatedAnalysis = await prisma.analysis.update({
       where: {
         id: project.analysis.id,
       },
       data: {
         opportunityScore: body.opportunityScore,
-        scoringBreakdown: body.scoringBreakdown,
-        aiInsights: body.aiInsights,
-        recommendedTopics: body.recommendedTopics,
-        recommendedActions: body.recommendedActions,
+        agentforceFitScore: body.agentforceFitScore,
+        useCases: body.useCases as any,
+        platformRequirements: body.platformRequirements as any,
         estimatedImplementationCost: body.estimatedImplementationCost,
         estimatedMonthlyCost: body.estimatedMonthlyCost,
+        estimatedAnnualCost: body.estimatedAnnualCost,
+        currentAnnualCost: body.currentAnnualCost,
         projectedYear1Savings: body.projectedYear1Savings,
         paybackMonths: body.paybackMonths,
+        threeYearRoi: body.threeYearRoi,
         consultantReviewed: body.consultantReviewed,
+        consultantNotes: body.consultantNotes,
+        customizations: body.customizations as any,
         reviewedAt: body.consultantReviewed ? new Date() : null,
       },
     });
@@ -302,16 +310,20 @@ export async function PATCH(
     return NextResponse.json({
       id: updatedAnalysis.id,
       opportunityScore: updatedAnalysis.opportunityScore,
-      scoringBreakdown: updatedAnalysis.scoringBreakdown,
-      aiInsights: updatedAnalysis.aiInsights,
-      recommendedTopics: updatedAnalysis.recommendedTopics,
-      recommendedActions: updatedAnalysis.recommendedActions,
+      agentforceFitScore: updatedAnalysis.agentforceFitScore,
+      useCases: updatedAnalysis.useCases,
+      platformRequirements: updatedAnalysis.platformRequirements,
       estimatedImplementationCost: updatedAnalysis.estimatedImplementationCost,
       estimatedMonthlyCost: updatedAnalysis.estimatedMonthlyCost,
+      estimatedAnnualCost: updatedAnalysis.estimatedAnnualCost,
+      currentAnnualCost: updatedAnalysis.currentAnnualCost,
       projectedYear1Savings: updatedAnalysis.projectedYear1Savings,
       paybackMonths: updatedAnalysis.paybackMonths,
+      threeYearRoi: updatedAnalysis.threeYearRoi,
       generatedAt: updatedAnalysis.generatedAt.toISOString(),
       consultantReviewed: updatedAnalysis.consultantReviewed,
+      consultantNotes: updatedAnalysis.consultantNotes,
+      customizations: updatedAnalysis.customizations,
     });
   } catch (error) {
     console.error("Error updating analysis:", error);
@@ -420,8 +432,8 @@ export async function POST(
         projectId: project.id,
         opportunityScore: analysisData.opportunityScore,
         agentforceFitScore: analysisData.agentforceFitScore,
-        useCases: analysisData.useCases,
-        platformRequirements: analysisData.platformRequirements,
+        useCases: analysisData.useCases as any,
+        platformRequirements: analysisData.platformRequirements as any,
         estimatedImplementationCost:
           analysisData.costEstimates.totalImplementation,
         estimatedMonthlyCost: analysisData.costEstimates.monthlyPlatformCost,

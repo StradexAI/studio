@@ -111,6 +111,8 @@ model Project {
 enum ProjectStatus {
   DISCOVERY           // Client hasn't completed discovery yet
   PENDING_REVIEW      // Discovery complete, awaiting consultant review
+  ANALYSIS_GENERATED  // Analysis generated, awaiting consultant review
+  ANALYSIS_REVIEWED   // Analysis reviewed and approved
   PROPOSAL_DRAFT      // Consultant is working on proposal
   PROPOSAL_SENT       // Proposal sent to client
   CONTRACTED          // Client signed contract
