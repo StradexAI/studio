@@ -73,22 +73,6 @@ export default function DiscoveryForm({ project, token }: DiscoveryFormProps) {
 
   const totalSections = 7;
 
-  // Load existing data on mount
-  useEffect(() => {
-    loadExistingData();
-  }, [token, loadExistingData]);
-
-  // Auto-save functionality
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (hasUnsavedChanges) {
-        saveProgress();
-      }
-    }, 30000); // Auto-save every 30 seconds
-
-    return () => clearInterval(timer);
-  }, [hasUnsavedChanges, saveProgress]);
-
   const loadExistingData = useCallback(async () => {
     try {
       const response = await fetch(`/api/discovery/${token}`);
@@ -118,27 +102,6 @@ export default function DiscoveryForm({ project, token }: DiscoveryFormProps) {
     }
   }, [token]);
 
-  const handleInputChange = (field: string, value: string | string[]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setHasUnsavedChanges(true);
-  };
-
-  const handleCheckboxChange = (
-    field: string,
-    value: string,
-    checked: boolean
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: checked
-        ? [...(prev[field as keyof typeof prev] as string[]), value]
-        : (prev[field as keyof typeof prev] as string[]).filter(
-            (item) => item !== value
-          ),
-    }));
-    setHasUnsavedChanges(true);
-  };
-
   const saveProgress = useCallback(async () => {
     if (!hasUnsavedChanges) return;
 
@@ -162,6 +125,43 @@ export default function DiscoveryForm({ project, token }: DiscoveryFormProps) {
       setIsSaving(false);
     }
   }, [hasUnsavedChanges, token, formData, currentSection]);
+
+  // Load existing data on mount
+  useEffect(() => {
+    loadExistingData();
+  }, [token, loadExistingData]);
+
+  // Auto-save functionality
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (hasUnsavedChanges) {
+        saveProgress();
+      }
+    }, 30000); // Auto-save every 30 seconds
+
+    return () => clearInterval(timer);
+  }, [hasUnsavedChanges, saveProgress]);
+
+  const handleInputChange = (field: string, value: string | string[]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleCheckboxChange = (
+    field: string,
+    value: string,
+    checked: boolean
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: checked
+        ? [...(prev[field as keyof typeof prev] as string[]), value]
+        : (prev[field as keyof typeof prev] as string[]).filter(
+            (item) => item !== value
+          ),
+    }));
+    setHasUnsavedChanges(true);
+  };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
