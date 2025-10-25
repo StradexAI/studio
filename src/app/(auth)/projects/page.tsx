@@ -1,9 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search, Filter, Copy, Trash2, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 interface Project {
@@ -11,6 +17,8 @@ interface Project {
   clientName: string;
   status: string;
   createdAt: string;
+  discoveryToken: string;
+  discoveryUrl: string;
   hasDiscoveryResponse: boolean;
   hasAnalysis: boolean;
 }
@@ -20,6 +28,10 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(
+    null
+  );
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProjects();
@@ -34,6 +46,44 @@ export default function ProjectsPage() {
       console.error("Error fetching projects:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteProject = async (projectId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this project? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    setDeletingProjectId(projectId);
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setProjects(projects.filter((p) => p.id !== projectId));
+      } else {
+        alert("Failed to delete project");
+      }
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      alert("Failed to delete project");
+    } finally {
+      setDeletingProjectId(null);
+    }
+  };
+
+  const copyDiscoveryUrl = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedUrl(url);
+      setTimeout(() => setCopiedUrl(null), 2000);
+    } catch (error) {
+      console.error("Failed to copy URL:", error);
     }
   };
 
@@ -72,7 +122,9 @@ export default function ProjectsPage() {
   };
 
   const filteredProjects = projects.filter((project) => {
-    const matchesSearch = project.clientName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = project.clientName
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
     const matchesStatus = !statusFilter || project.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -139,10 +191,15 @@ export default function ProjectsPage() {
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.map((project) => (
-            <Card key={project.id} className="hover:shadow-lg transition-shadow">
+            <Card
+              key={project.id}
+              className="hover:shadow-lg transition-shadow"
+            >
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{project.clientName}</CardTitle>
+                  <CardTitle className="text-lg">
+                    {project.clientName}
+                  </CardTitle>
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
                       project.status
@@ -156,24 +213,85 @@ export default function ProjectsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className={`w-2 h-2 rounded-full ${project.hasDiscoveryResponse ? 'bg-green-500' : 'bg-gray-300'}`}></span>
-                    Discovery {project.hasDiscoveryResponse ? 'Complete' : 'Pending'}
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span
+                        className={`w-2 h-2 rounded-full ${project.hasDiscoveryResponse ? "bg-green-500" : "bg-gray-300"}`}
+                      ></span>
+                      Discovery{" "}
+                      {project.hasDiscoveryResponse ? "Complete" : "Pending"}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span
+                        className={`w-2 h-2 rounded-full ${project.hasAnalysis ? "bg-green-500" : "bg-gray-300"}`}
+                      ></span>
+                      Analysis {project.hasAnalysis ? "Complete" : "Pending"}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className={`w-2 h-2 rounded-full ${project.hasAnalysis ? 'bg-green-500' : 'bg-gray-300'}`}></span>
-                    Analysis {project.hasAnalysis ? 'Complete' : 'Pending'}
+
+                  {/* Discovery Link */}
+                  <div className="border-t pt-3">
+                    <div className="text-xs text-gray-500 mb-2">
+                      Discovery Link:
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={project.discoveryUrl}
+                        readOnly
+                        className="flex-1 text-xs p-2 border border-gray-300 rounded bg-gray-50"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => copyDiscoveryUrl(project.discoveryUrl)}
+                        className="px-2"
+                      >
+                        {copiedUrl === project.discoveryUrl ? (
+                          <span className="text-green-600">✓</span>
+                        ) : (
+                          <Copy className="h-3 w-3" />
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          window.open(project.discoveryUrl, "_blank")
+                        }
+                        className="px-2"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
+
                 <div className="mt-4 flex gap-2">
                   <Link href={`/projects/${project.id}`} className="flex-1">
                     <Button variant="outline" size="sm" className="w-full">
                       View Details
                     </Button>
                   </Link>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => deleteProject(project.id)}
+                    disabled={deletingProjectId === project.id}
+                    className="px-3"
+                  >
+                    {deletingProjectId === project.id ? (
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                    ) : (
+                      <Trash2 className="h-3 w-3" />
+                    )}
+                  </Button>
                   {project.hasAnalysis && (
-                    <Link href={`/projects/${project.id}/proposal`} className="flex-1">
+                    <Link
+                      href={`/projects/${project.id}/proposal`}
+                      className="flex-1"
+                    >
                       <Button size="sm" className="w-full">
                         Generate Proposal
                       </Button>
@@ -188,7 +306,9 @@ export default function ProjectsPage() {
         {filteredProjects.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-500 text-lg mb-4">
-              {projects.length === 0 ? "No projects yet" : "No projects match your filters"}
+              {projects.length === 0
+                ? "No projects yet"
+                : "No projects match your filters"}
             </div>
             {projects.length === 0 && (
               <Link href="/projects/new">

@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
           clientName: true,
           status: true,
           createdAt: true,
+          discoveryToken: true,
           discoveryResponse: {
             select: { id: true },
           },
@@ -62,6 +63,7 @@ export async function GET(request: NextRequest) {
         clientName: string;
         status: string;
         createdAt: Date;
+        discoveryToken: string;
         discoveryResponse: { id: string } | null;
         analysis: { id: string } | null;
       }) => ({
@@ -69,6 +71,8 @@ export async function GET(request: NextRequest) {
         clientName: project.clientName,
         status: project.status,
         createdAt: project.createdAt.toISOString(),
+        discoveryToken: project.discoveryToken,
+        discoveryUrl: `${process.env.NEXTAUTH_URL || "https://studio.stradexai.com"}/discover/${project.discoveryToken}`,
         hasDiscoveryResponse: !!project.discoveryResponse,
         hasAnalysis: !!project.analysis,
       })
@@ -114,7 +118,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const discoveryUrl = `${process.env.NEXTAUTH_URL}/discover/${discoveryToken}`;
+    const baseUrl = process.env.NEXTAUTH_URL || "https://studio.stradexai.com";
+    const discoveryUrl = `${baseUrl}/discover/${discoveryToken}`;
 
     return NextResponse.json(
       {

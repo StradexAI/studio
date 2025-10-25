@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     const proposalContent = {
       executiveSummary: {
         title: `Agentforce Implementation for ${project.clientName}`,
-        overview: `Based on our analysis, we recommend implementing Agentforce to automate your ${project.discoveryResponse?.useCaseName || "business processes"}.`,
+        overview: `Based on our analysis, we recommend implementing Agentforce to automate your ${project.discoveryResponse?.primaryDepartment || "business processes"}.`,
         keyBenefits: [
           `Reduce operational costs by ${project.analysis.projectedYear1Savings ? Math.round((project.analysis.projectedYear1Savings / (project.analysis.currentAnnualCost || 1)) * 100) : 50}%`,
           `Improve response times and customer satisfaction`,
