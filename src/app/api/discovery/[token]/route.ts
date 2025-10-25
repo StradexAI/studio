@@ -94,6 +94,13 @@ export async function GET(
   try {
     const { token } = params;
 
+    // Debug: Log environment and connection info
+    console.log("Discovery API Debug:", {
+      token,
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+      nodeEnv: process.env.NODE_ENV,
+    });
+
     // Find project by discovery token
     const project = await prisma.project.findUnique({
       where: {
@@ -128,10 +135,21 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error validating discovery token:", error);
+    console.error("Error details:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+      token,
+    });
     return NextResponse.json(
       {
         valid: false,
         error: "Failed to validate discovery link",
+        debug:
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : "Unknown error"
+            : undefined,
       },
       { status: 500 }
     );

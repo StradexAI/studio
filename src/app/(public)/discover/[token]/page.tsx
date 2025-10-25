@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckCircle } from "lucide-react";
-import DiscoveryForm from "@/components/discovery/DiscoveryForm";
+import DiscoveryFormModular from "@/components/discovery/DiscoveryFormModular";
 
 export default function DiscoverPage() {
   const params = useParams();
@@ -86,7 +86,7 @@ export default function DiscoverPage() {
   }
 
   if (showForm) {
-    return <DiscoveryForm project={project} token={token} />;
+    return <DiscoveryFormModular project={project} token={token} />;
   }
 
   return (
@@ -109,7 +109,7 @@ export default function DiscoverPage() {
               you with a customized solution proposal.
             </p>
             <p className="text-xs text-gray-500">
-              Estimated time: 15-20 minutes
+              Estimated time: 4-5 hours (can be completed in multiple sessions)
             </p>
           </div>
 

@@ -85,64 +85,104 @@ export interface ClaudeAgentforceResponse {
  * This is the data structure collected from clients during the discovery phase
  */
 export interface DiscoveryResponse {
-  // Section 1: Company & Contact Information
+  // Section 1: The Basics
   companyName?: string;
   contactName?: string;
   contactEmail?: string;
   contactRole?: string;
+  companySize?: string;
+  industry?: string;
 
-  // Section 2: Department & Use Case
+  // Section 2: Pain Points (NEW - structured as JSON)
+  painPoints?: Array<{
+    department: string;
+    description: string;
+    frequency: string;
+    cost: string;
+  }>;
+
+  // Section 3: Common Questions (NEW - structured as JSON)
+  commonQuestions?: string[];
+
+  // Section 4: Real Conversations (NEW - structured as JSON)
+  realConversations?: Array<{
+    trigger: string;
+    conversation: string;
+    outcome: string;
+    duration: string;
+  }>;
+
+  // Section 5: Volume & Staffing (REVISED - structured as JSON)
+  volumeMetrics?: {
+    phone: string;
+    email: string;
+    chat: string;
+    forms: string;
+    social: string;
+    inPerson: string;
+    other: string;
+  };
+  staffingInfo?: {
+    numPeople: string;
+    percentRepetitive: number;
+    avgResponseTime: string;
+    avgCostPerEmployee: string;
+  };
+
+  // Section 6: Channels (REVISED)
+  currentChannels?: string[];
+  desiredChannels?: string[]; // NEW - where they want AI agents deployed
+
+  // Section 7: Salesforce Environment (REVISED)
+  usesSalesforce?: string;
+  salesforceProducts?: string[];
+  salesforceEdition?: string; // NEW
+  existingAutomation?: string[]; // NEW
+  dataLocations?: string[]; // Renamed from dataStorageLocations
+  teamSkillLevel?: string; // NEW
+
+  // Section 8: Current Workflows (NEW - structured as JSON)
+  currentWorkflow?: {
+    steps: string[];
+    systemsTouched: string;
+    dataLookedUp: string;
+    whatGetsUpdated: string;
+  };
+
+  // Section 9: Success Criteria (REVISED)
+  topGoals?: string[]; // NEW - top 3 selected goals
+  successDescription?: string; // NEW - what success looks like in 6 months
+  successMetrics?: string; // NEW - how they'll measure success
+
+  // Section 10: Budget & Timeline (REVISED)
+  timeline?: string;
+  implementationBudget?: string; // NEW
+  monthlyBudget?: string; // NEW
+
+  // Section 11: Special Requirements (REVISED)
+  technicalRequirements?: string;
+  concerns?: string[];
+
+  // Section 12: Final Details
+  additionalContext?: string;
+  referralSource?: string;
+  wantsConsultation?: string;
+
+  // Legacy fields for backward compatibility (if needed)
   primaryDepartment?: string;
-  useCases?: string[]; // Array of selected use cases
+  useCases?: string[];
   visionDescription?: string;
-
-  // Section 3: Business Objectives
   primaryObjective?: string;
   automationTarget?: string;
   successDefinition?: string;
   currentMetrics?: string;
-
-  // Section 4: Current Process
-  currentChannels?: string[];
   monthlyVolume?: string;
-  painPoints?: string;
-  commonQuestions?: string;
-
-  // Section 5: Technical Context
-  usesSalesforce?: string;
-  salesforceProducts?: string[];
   dataStorageLocations?: string[];
   systemsToIntegrate?: string;
-
-  // Section 6: Success Criteria & Constraints
   targetLaunchDate?: string;
   budgetRange?: string;
   requirements?: string;
-
-  // Section 7: Additional Context
-  concerns?: string[];
-  referralSource?: string;
-  additionalContext?: string;
-  wantsConsultation?: string;
   bestTimeToReach?: string;
-
-  // Legacy fields for backward compatibility
-  industry?: string;
-  companySize?: string;
-  currentProcesses?: string;
-  manualTasks?: string;
-  timeSpentOnTasks?: string;
-  businessGoals?: string;
-  expectedOutcomes?: string;
-  successMetrics?: string;
-  currentSystems?: string;
-  dataAvailability?: string;
-  technicalConstraints?: string;
-  budget?: string;
-  timeline?: string;
-  priorityLevel?: string;
-  additionalInfo?: string;
-  specificRequirements?: string;
 }
 
 /**
@@ -278,30 +318,160 @@ export function validateDiscoveryResponse(
 ): ValidationError[] {
   const errors: ValidationError[] = [];
 
-  // Required fields
+  // Section 1: Required fields
   if (!data.companyName?.trim()) {
     errors.push({ field: "companyName", message: "Company name is required" });
   }
-
-  if (!data.industry?.trim()) {
-    errors.push({ field: "industry", message: "Industry is required" });
+  if (!data.contactName?.trim()) {
+    errors.push({ field: "contactName", message: "Contact name is required" });
+  }
+  if (!data.contactEmail?.trim()) {
+    errors.push({
+      field: "contactEmail",
+      message: "Contact email is required",
+    });
+  }
+  if (!data.contactRole?.trim()) {
+    errors.push({ field: "contactRole", message: "Contact role is required" });
   }
 
-  if (!data.currentProcesses?.trim()) {
+  // Section 2: Pain Points (at least 3 required)
+  if (!data.painPoints || data.painPoints.length < 3) {
     errors.push({
-      field: "currentProcesses",
-      message: "Current processes description is required",
+      field: "painPoints",
+      message: "At least 3 pain points are required",
+    });
+  } else {
+    data.painPoints.forEach((painPoint, index) => {
+      if (!painPoint.description?.trim()) {
+        errors.push({
+          field: `painPoints[${index}].description`,
+          message: `Pain point ${index + 1} description is required`,
+        });
+      }
+      if (!painPoint.department?.trim()) {
+        errors.push({
+          field: `painPoints[${index}].department`,
+          message: `Pain point ${index + 1} department is required`,
+        });
+      }
     });
   }
 
-  if (!data.painPoints?.trim()) {
-    errors.push({ field: "painPoints", message: "Pain points are required" });
+  // Section 3: Common Questions (at least 5 required)
+  if (
+    !data.commonQuestions ||
+    data.commonQuestions.filter((q) => q?.trim()).length < 5
+  ) {
+    errors.push({
+      field: "commonQuestions",
+      message: "At least 5 common questions are required",
+    });
   }
 
-  if (!data.businessGoals?.trim()) {
+  // Section 4: Real Conversations (at least 1 required)
+  if (!data.realConversations || data.realConversations.length < 1) {
     errors.push({
-      field: "businessGoals",
-      message: "Business goals are required",
+      field: "realConversations",
+      message: "At least 1 real conversation example is required",
+    });
+  } else {
+    data.realConversations.forEach((conversation, index) => {
+      if (!conversation.conversation?.trim()) {
+        errors.push({
+          field: `realConversations[${index}].conversation`,
+          message: `Conversation ${index + 1} content is required`,
+        });
+      }
+    });
+  }
+
+  // Section 5: Volume & Staffing
+  if (!data.volumeMetrics) {
+    errors.push({
+      field: "volumeMetrics",
+      message: "Volume metrics are required",
+    });
+  }
+  if (!data.staffingInfo?.numPeople?.trim()) {
+    errors.push({
+      field: "staffingInfo.numPeople",
+      message: "Number of people is required",
+    });
+  }
+
+  // Section 6: Channels
+  if (!data.currentChannels || data.currentChannels.length === 0) {
+    errors.push({
+      field: "currentChannels",
+      message: "At least one current channel is required",
+    });
+  }
+  if (!data.desiredChannels || data.desiredChannels.length === 0) {
+    errors.push({
+      field: "desiredChannels",
+      message: "At least one desired channel is required",
+    });
+  }
+
+  // Section 7: Salesforce
+  if (!data.usesSalesforce?.trim()) {
+    errors.push({
+      field: "usesSalesforce",
+      message: "Salesforce usage status is required",
+    });
+  }
+
+  // Section 8: Workflow
+  if (
+    !data.currentWorkflow?.steps ||
+    data.currentWorkflow.steps.filter((s) => s?.trim()).length < 3
+  ) {
+    errors.push({
+      field: "currentWorkflow.steps",
+      message: "At least 3 workflow steps are required",
+    });
+  }
+
+  // Section 9: Success Criteria
+  if (!data.topGoals || data.topGoals.length < 3) {
+    errors.push({
+      field: "topGoals",
+      message: "Please select your top 3 goals",
+    });
+  }
+  if (!data.successDescription?.trim()) {
+    errors.push({
+      field: "successDescription",
+      message: "Success description is required",
+    });
+  }
+
+  // Section 10: Budget & Timeline
+  if (!data.timeline?.trim()) {
+    errors.push({
+      field: "timeline",
+      message: "Timeline preference is required",
+    });
+  }
+  if (!data.implementationBudget?.trim()) {
+    errors.push({
+      field: "implementationBudget",
+      message: "Implementation budget is required",
+    });
+  }
+  if (!data.monthlyBudget?.trim()) {
+    errors.push({
+      field: "monthlyBudget",
+      message: "Monthly budget is required",
+    });
+  }
+
+  // Section 12: Final
+  if (!data.wantsConsultation?.trim()) {
+    errors.push({
+      field: "wantsConsultation",
+      message: "Consultation preference is required",
     });
   }
 
@@ -351,30 +521,102 @@ export const sampleDiscoveryResponse: DiscoveryResponse = {
   companyName: "TechCorp Solutions",
   industry: "Software Development",
   companySize: "50-100 employees",
-  currentProcesses:
-    "Manual code review, ticket triaging, documentation updates, customer support responses",
-  painPoints:
-    "High time spent on repetitive tasks, slow response times to customers, inconsistent documentation",
-  manualTasks:
-    "Code reviews take 2-3 hours per PR, ticket classification takes 30 mins per batch, documentation updates take 4 hours weekly",
-  timeSpentOnTasks:
-    "Approximately 20 hours per week across the team on these repetitive tasks",
-  businessGoals:
-    "Reduce operational costs, improve response times, scale without proportional headcount growth",
-  expectedOutcomes:
-    "50% reduction in time spent on manual tasks, faster customer response times, more consistent quality",
+  painPoints: [
+    {
+      department: "Engineering",
+      description:
+        "High time spent on repetitive tasks, slow response times to customers, inconsistent documentation",
+      frequency: "Daily",
+      cost: "2 FTEs spend 60% of time on this",
+    },
+    {
+      department: "Support",
+      description: "Manual ticket classification and routing",
+      frequency: "Daily",
+      cost: "1 FTE spends 4 hours daily",
+    },
+    {
+      department: "Operations",
+      description: "Manual documentation updates",
+      frequency: "Weekly",
+      cost: "Team spends 4 hours weekly",
+    },
+  ],
+  commonQuestions: [
+    "Where's my order?",
+    "How do I reset my password?",
+    "What's the price for Enterprise plan?",
+    "Can I return this item?",
+    "How do I cancel my subscription?",
+  ],
+  realConversations: [
+    {
+      trigger:
+        "Customer receives order confirmation email and replies asking about delivery time",
+      conversation:
+        "Customer: Hi, I placed an order last week and haven't received any updates. Can you help me track it?\n\nYour team: Hi! I'd be happy to help you track your order. Can you please provide me with your order number or the email address you used when placing the order?\n\nCustomer: Sure, my order number is #12345 and I used john@email.com\n\nYour team: Thank you! I can see your order was shipped on Monday and is currently out for delivery. Here's your tracking number: 1Z999AA10123456784. You can track it on the FedEx website. It should arrive today by 5pm.\n\nCustomer: Perfect! Thank you so much for your help.\n\nYour team: You're welcome! Is there anything else I can help you with today?",
+      outcome: "Provided tracking link, customer satisfied",
+      duration: "5 min",
+    },
+  ],
+  volumeMetrics: {
+    phone: "50",
+    email: "200",
+    chat: "100",
+    forms: "25",
+    social: "15",
+    inPerson: "10",
+    other: "5",
+  },
+  staffingInfo: {
+    numPeople: "5",
+    percentRepetitive: 75,
+    avgResponseTime: "15-30 min",
+    avgCostPerEmployee: "$100-150K/year",
+  },
+  currentChannels: ["Email", "Live chat on website", "Phone"],
+  desiredChannels: [
+    "Website chat (for customers)",
+    "Email responses (for customers)",
+  ],
+  usesSalesforce: "active",
+  salesforceProducts: ["Sales Cloud", "Service Cloud"],
+  salesforceEdition: "Enterprise",
+  existingAutomation: [
+    "Workflows or automation rules",
+    "Custom fields and objects",
+  ],
+  dataLocations: ["In Salesforce", "In another CRM"],
+  teamSkillLevel: "Intermediate - We've customized it some",
+  currentWorkflow: {
+    steps: [
+      "Customer sends email to support@company.com",
+      "Support rep reads email and checks order in Salesforce",
+      "Rep looks up shipping carrier website for tracking",
+      "Rep copies tracking link into email response",
+      "Rep sends email to customer - average 15 minutes",
+    ],
+    systemsTouched: "Email, Salesforce, ShipStation API, carrier websites",
+    dataLookedUp:
+      "Order number, customer account, shipping carrier, tracking number",
+    whatGetsUpdated: "Case status in Salesforce, last contact date",
+  },
+  topGoals: [
+    "Reduce staffing costs",
+    "Improve response times",
+    "Scale without hiring",
+  ],
+  successDescription:
+    "Customer wait time drops from 4 hours to under 5 minutes, CSAT goes from 3.8 to 4.5, and we handle 2x the volume without adding headcount",
   successMetrics:
-    "Time saved per week, customer satisfaction scores, documentation coverage percentage",
-  currentSystems: "GitHub, Jira, Confluence, Zendesk, Slack",
-  dataAvailability:
-    "All systems have APIs, historical data available for past 2 years",
-  technicalConstraints:
-    "Must integrate with existing tools, need SOC2 compliance, prefer cloud-based solutions",
-  budget: "$50,000-$100,000 for implementation, $5,000-$10,000 monthly ongoing",
-  timeline: "3-4 months for initial implementation",
-  priorityLevel: "High - looking to implement within next quarter",
-  additionalInfo:
+    "Response time (target: <5 minutes), Resolution rate (target: 80% automated), CSAT score (target: 4.5/5), Cost per conversation (target: <$2 vs $15 with humans)",
+  timeline: "Within 3-6 months",
+  implementationBudget: "$50-100K",
+  monthlyBudget: "$5-10K/month",
+  technicalRequirements: "Must support Spanish language, Need HIPAA compliance",
+  concerns: ["Cost", "Technical complexity", "Customer acceptance"],
+  additionalContext:
     "Team is tech-savvy and open to AI solutions. Have used some automation tools before.",
-  specificRequirements:
-    "Need training for team members, want phased rollout approach, require detailed ROI tracking",
+  referralSource: "Google search",
+  wantsConsultation: "Maybe, I'll decide after seeing the proposal",
 };

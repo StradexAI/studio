@@ -127,46 +127,60 @@ model DiscoveryResponse {
   projectId String   @unique
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   
-  // Section 1: Company & Contact Information
+  // Section 1: The Basics
   companyName         String
   contactName         String
   contactEmail        String
   contactRole         String
+  companySize         String?
+  industry            String?
   
-  // Section 2: Department & Use Case
-  primaryDepartment   String
-  useCases            String[]  // Array of selected use cases
-  visionDescription   String    @db.Text
+  // Section 2: Pain Points (NEW - structured as JSON)
+  painPoints          Json?     // Array of {department, description, frequency, cost}
   
-  // Section 3: Business Objectives
-  primaryObjective    String
-  automationTarget    String?
-  successDefinition   String    @db.Text
-  currentMetrics      String?   @db.Text
+  // Section 3: Common Questions (NEW - structured as JSON)
+  commonQuestions     Json?     // Array of strings (10-15 questions)
   
-  // Section 4: Current Process
+  // Section 4: Real Conversations (NEW - structured as JSON)
+  realConversations   Json?     // Array of {trigger, conversation, outcome, duration}
+  
+  // Section 5: Volume & Staffing (REVISED - structured as JSON)
+  volumeMetrics       Json?     // {phone, email, chat, forms, social, inPerson, other}
+  staffingInfo        Json?     // {numPeople, percentRepetitive, avgResponseTime, avgCostPerEmployee}
+  
+  // Section 6: Channels (REVISED)
   currentChannels     String[]
-  monthlyVolume       String?
-  painPoints          String    @db.Text
-  commonQuestions     String?   @db.Text
+  desiredChannels     String[]  // NEW - where they want AI agents deployed
   
-  // Section 5: Technical Context
+  // Section 7: Salesforce Environment (REVISED)
   usesSalesforce      String
   salesforceProducts  String[]
-  dataStorageLocations String[]
-  systemsToIntegrate  String?   @db.Text
+  salesforceEdition   String?   // NEW
+  existingAutomation  String[]  // NEW
+  dataLocations       String[]  // Renamed from dataStorageLocations
+  teamSkillLevel      String?   // NEW
   
-  // Section 6: Success Criteria & Constraints
-  targetLaunchDate    String?
-  budgetRange         String?
-  requirements        String?   @db.Text
+  // Section 8: Current Workflows (NEW - structured as JSON)
+  currentWorkflow     Json?     // {steps: [], systemsTouched, dataLookedUp, whatGetsUpdated}
   
-  // Section 7: Additional Context
+  // Section 9: Success Criteria (REVISED)
+  topGoals            String[]  // NEW - top 3 selected goals
+  successDescription  String?   @db.Text  // NEW - what success looks like in 6 months
+  successMetrics      String?   @db.Text  // NEW - how they'll measure success
+  
+  // Section 10: Budget & Timeline (REVISED)
+  timeline            String?
+  implementationBudget String?  // NEW
+  monthlyBudget       String?   // NEW
+  
+  // Section 11: Special Requirements (REVISED)
+  technicalRequirements String? @db.Text
   concerns            String[]
-  referralSource      String?
+  
+  // Section 12: Final Details
   additionalContext   String?   @db.Text
+  referralSource      String?
   wantsConsultation   String
-  bestTimeToReach     String?
   
   // Metadata
   status              ResponseStatus @default(IN_PROGRESS)

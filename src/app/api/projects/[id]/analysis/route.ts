@@ -380,7 +380,7 @@ export async function POST(
 
     // Validate discovery response data
     const validationErrors = validateDiscoveryResponse(
-      project.discoveryResponse as DiscoveryResponse
+      project.discoveryResponse as unknown as DiscoveryResponse
     );
     if (validationErrors.length > 0) {
       return NextResponse.json(
@@ -414,7 +414,7 @@ export async function POST(
 
     // Generate the optimized Agentforce prompt
     const prompt = generateAgentforceAnalysisPrompt(
-      project.discoveryResponse as DiscoveryResponse,
+      project.discoveryResponse as unknown as DiscoveryResponse,
       project.clientName
     );
 

@@ -91,9 +91,19 @@ export function DiscoveryDataEditor({
     const requiredFields: (keyof DiscoveryResponse)[] = [
       "companyName",
       "industry",
-      "currentProcesses",
+      "companySize",
       "painPoints",
-      "businessGoals",
+      "commonQuestions",
+      "realConversations",
+      "volumeMetrics",
+      "staffingInfo",
+      "currentWorkflow",
+      "topGoals",
+      "successDescription",
+      "successMetrics",
+      "timeline",
+      "implementationBudget",
+      "monthlyBudget",
     ];
     return requiredFields.includes(field);
   };
@@ -163,7 +173,7 @@ export function DiscoveryDataEditor({
               Current Processes
             </Label>
             <p className="text-sm mt-1 p-3 bg-gray-50 rounded-md">
-              {initialData.currentProcesses || "Not provided"}
+              {getFieldValue("currentWorkflow") || "Not provided"}
             </p>
           </div>
 
@@ -172,7 +182,7 @@ export function DiscoveryDataEditor({
               Pain Points
             </Label>
             <p className="text-sm mt-1 p-3 bg-gray-50 rounded-md">
-              {initialData.painPoints || "Not provided"}
+              {getFieldValue("painPoints") || "Not provided"}
             </p>
           </div>
 
@@ -181,7 +191,7 @@ export function DiscoveryDataEditor({
               Business Goals
             </Label>
             <p className="text-sm mt-1 p-3 bg-gray-50 rounded-md">
-              {initialData.businessGoals || "Not provided"}
+              {getFieldValue("topGoals") || "Not provided"}
             </p>
           </div>
         </CardContent>
@@ -297,16 +307,16 @@ export function DiscoveryDataEditor({
         </div>
 
         <div>
-          <Label htmlFor="currentProcesses" className="text-sm font-medium">
-            Current Processes{" "}
-            {isFieldRequired("currentProcesses") && (
+          <Label htmlFor="currentWorkflow" className="text-sm font-medium">
+            Current Workflow{" "}
+            {isFieldRequired("currentWorkflow") && (
               <span className="text-red-500">*</span>
             )}
           </Label>
           <Textarea
-            id="currentProcesses"
-            value={getFieldValue("currentProcesses")}
-            onChange={(e) => updateField("currentProcesses", e.target.value)}
+            id="currentWorkflow"
+            value={getFieldValue("currentWorkflow")}
+            onChange={(e) => updateField("currentWorkflow", e.target.value)}
             placeholder="Describe current business processes..."
             rows={4}
             className="mt-1"
@@ -331,16 +341,16 @@ export function DiscoveryDataEditor({
         </div>
 
         <div>
-          <Label htmlFor="businessGoals" className="text-sm font-medium">
-            Business Goals{" "}
-            {isFieldRequired("businessGoals") && (
+          <Label htmlFor="topGoals" className="text-sm font-medium">
+            Top Goals{" "}
+            {isFieldRequired("topGoals") && (
               <span className="text-red-500">*</span>
             )}
           </Label>
           <Textarea
-            id="businessGoals"
-            value={getFieldValue("businessGoals")}
-            onChange={(e) => updateField("businessGoals", e.target.value)}
+            id="topGoals"
+            value={getFieldValue("topGoals")}
+            onChange={(e) => updateField("topGoals", e.target.value)}
             placeholder="Describe business objectives and goals..."
             rows={4}
             className="mt-1"
@@ -348,13 +358,13 @@ export function DiscoveryDataEditor({
         </div>
 
         <div>
-          <Label htmlFor="expectedOutcomes" className="text-sm font-medium">
-            Expected Outcomes
+          <Label htmlFor="successDescription" className="text-sm font-medium">
+            Success Description
           </Label>
           <Textarea
-            id="expectedOutcomes"
-            value={getFieldValue("expectedOutcomes")}
-            onChange={(e) => updateField("expectedOutcomes", e.target.value)}
+            id="successDescription"
+            value={getFieldValue("successDescription")}
+            onChange={(e) => updateField("successDescription", e.target.value)}
             placeholder="What outcomes are expected from automation..."
             rows={3}
             className="mt-1"
@@ -362,13 +372,13 @@ export function DiscoveryDataEditor({
         </div>
 
         <div>
-          <Label htmlFor="currentSystems" className="text-sm font-medium">
-            Current Systems
+          <Label htmlFor="salesforceProducts" className="text-sm font-medium">
+            Salesforce Products
           </Label>
           <Textarea
-            id="currentSystems"
-            value={getFieldValue("currentSystems")}
-            onChange={(e) => updateField("currentSystems", e.target.value)}
+            id="salesforceProducts"
+            value={getFieldValue("salesforceProducts")}
+            onChange={(e) => updateField("salesforceProducts", e.target.value)}
             placeholder="List current systems and tools..."
             rows={3}
             className="mt-1"
@@ -376,26 +386,28 @@ export function DiscoveryDataEditor({
         </div>
 
         <div>
-          <Label htmlFor="budget" className="text-sm font-medium">
-            Budget
+          <Label htmlFor="implementationBudget" className="text-sm font-medium">
+            Implementation Budget
           </Label>
           <Input
-            id="budget"
-            value={getFieldValue("budget")}
-            onChange={(e) => updateField("budget", e.target.value)}
+            id="implementationBudget"
+            value={getFieldValue("implementationBudget")}
+            onChange={(e) =>
+              updateField("implementationBudget", e.target.value)
+            }
             placeholder="e.g., $50,000 - $100,000"
             className="mt-1"
           />
         </div>
 
         <div>
-          <Label htmlFor="additionalInfo" className="text-sm font-medium">
+          <Label htmlFor="additionalContext" className="text-sm font-medium">
             Additional Information
           </Label>
           <Textarea
-            id="additionalInfo"
-            value={getFieldValue("additionalInfo")}
-            onChange={(e) => updateField("additionalInfo", e.target.value)}
+            id="additionalContext"
+            value={getFieldValue("additionalContext")}
+            onChange={(e) => updateField("additionalContext", e.target.value)}
             placeholder="Any additional context or requirements..."
             rows={3}
             className="mt-1"

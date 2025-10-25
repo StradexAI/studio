@@ -29,49 +29,87 @@ export default function DiscoveryForm({ project, token }: DiscoveryFormProps) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const [formData, setFormData] = useState({
-    // Section 1: Company & Contact Information
+    // Section 1: The Basics
     companyName: "",
     contactName: "",
     contactEmail: "",
     contactRole: "",
+    companySize: "",
+    industry: "",
 
-    // Section 2: Department & Use Case
-    primaryDepartment: "",
-    useCases: [] as string[],
-    visionDescription: "",
+    // Section 2: Pain Points (NEW - structured as JSON)
+    painPoints: [
+      { department: "", description: "", frequency: "", cost: "" },
+      { department: "", description: "", frequency: "", cost: "" },
+      { department: "", description: "", frequency: "", cost: "" },
+    ],
 
-    // Section 3: Business Objectives
-    primaryObjective: "",
-    automationTarget: "",
-    successDefinition: "",
-    currentMetrics: "",
+    // Section 3: Common Questions (NEW - structured as JSON)
+    commonQuestions: ["", "", "", "", ""],
 
-    // Section 4: Current Process
+    // Section 4: Real Conversations (NEW - structured as JSON)
+    realConversations: [
+      { trigger: "", conversation: "", outcome: "", duration: "" },
+    ],
+
+    // Section 5: Volume & Staffing (REVISED - structured as JSON)
+    volumeMetrics: {
+      phone: "",
+      email: "",
+      chat: "",
+      forms: "",
+      social: "",
+      inPerson: "",
+      other: "",
+    },
+    staffingInfo: {
+      numPeople: "",
+      percentRepetitive: 50,
+      avgResponseTime: "",
+      avgCostPerEmployee: "",
+    },
+
+    // Section 6: Channels (REVISED)
     currentChannels: [] as string[],
-    monthlyVolume: "",
-    painPoints: "",
-    commonQuestions: "",
+    desiredChannels: [] as string[], // NEW - where they want AI agents deployed
 
-    // Section 5: Technical Context
+    // Section 7: Salesforce Environment (REVISED)
     usesSalesforce: "",
     salesforceProducts: [] as string[],
-    dataStorageLocations: [] as string[],
-    systemsToIntegrate: "",
+    salesforceEdition: "", // NEW
+    existingAutomation: [] as string[], // NEW
+    dataLocations: [] as string[], // Renamed from dataStorageLocations
+    teamSkillLevel: "", // NEW
 
-    // Section 6: Success Criteria & Constraints
-    targetLaunchDate: "",
-    budgetRange: "",
-    requirements: "",
+    // Section 8: Current Workflows (NEW - structured as JSON)
+    currentWorkflow: {
+      steps: ["", "", "", "", ""],
+      systemsTouched: "",
+      dataLookedUp: "",
+      whatGetsUpdated: "",
+    },
 
-    // Section 7: Additional Context
+    // Section 9: Success Criteria (REVISED)
+    topGoals: [] as string[], // NEW - top 3 selected goals
+    successDescription: "", // NEW - what success looks like in 6 months
+    successMetrics: "", // NEW - how they'll measure success
+
+    // Section 10: Budget & Timeline (REVISED)
+    timeline: "",
+    implementationBudget: "", // NEW
+    monthlyBudget: "", // NEW
+
+    // Section 11: Special Requirements (REVISED)
+    technicalRequirements: "",
     concerns: [] as string[],
-    referralSource: "",
+
+    // Section 12: Final Details
     additionalContext: "",
+    referralSource: "",
     wantsConsultation: "",
-    bestTimeToReach: "",
   });
 
-  const totalSections = 7;
+  const totalSections = 12;
 
   const loadExistingData = useCallback(async () => {
     try {
@@ -161,6 +199,142 @@ export default function DiscoveryForm({ project, token }: DiscoveryFormProps) {
           ),
     }));
     setHasUnsavedChanges(true);
+  };
+
+  // Helper functions for dynamic form elements
+  const addPainPoint = () => {
+    if (formData.painPoints.length < 5) {
+      setFormData((prev) => ({
+        ...prev,
+        painPoints: [
+          ...prev.painPoints,
+          { department: "", description: "", frequency: "", cost: "" },
+        ],
+      }));
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const removePainPoint = (index: number) => {
+    if (formData.painPoints.length > 3) {
+      setFormData((prev) => ({
+        ...prev,
+        painPoints: prev.painPoints.filter((_, i) => i !== index),
+      }));
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const updatePainPoint = (index: number, field: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      painPoints: prev.painPoints.map((pp, i) =>
+        i === index ? { ...pp, [field]: value } : pp
+      ),
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const addQuestion = () => {
+    if (formData.commonQuestions.length < 15) {
+      setFormData((prev) => ({
+        ...prev,
+        commonQuestions: [...prev.commonQuestions, ""],
+      }));
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const removeQuestion = (index: number) => {
+    if (formData.commonQuestions.length > 5) {
+      setFormData((prev) => ({
+        ...prev,
+        commonQuestions: prev.commonQuestions.filter((_, i) => i !== index),
+      }));
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const addConversation = () => {
+    if (formData.realConversations.length < 5) {
+      setFormData((prev) => ({
+        ...prev,
+        realConversations: [
+          ...prev.realConversations,
+          { trigger: "", conversation: "", outcome: "", duration: "" },
+        ],
+      }));
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const removeConversation = (index: number) => {
+    if (formData.realConversations.length > 1) {
+      setFormData((prev) => ({
+        ...prev,
+        realConversations: prev.realConversations.filter((_, i) => i !== index),
+      }));
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const updateConversation = (index: number, field: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      realConversations: prev.realConversations.map((conv, i) =>
+        i === index ? { ...conv, [field]: value } : conv
+      ),
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const addWorkflowStep = () => {
+    setFormData((prev) => ({
+      ...prev,
+      currentWorkflow: {
+        ...prev.currentWorkflow,
+        steps: [...prev.currentWorkflow.steps, ""],
+      },
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const removeWorkflowStep = (index: number) => {
+    if (formData.currentWorkflow.steps.length > 3) {
+      setFormData((prev) => ({
+        ...prev,
+        currentWorkflow: {
+          ...prev.currentWorkflow,
+          steps: prev.currentWorkflow.steps.filter((_, i) => i !== index),
+        },
+      }));
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const updateWorkflowStep = (index: number, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      currentWorkflow: {
+        ...prev.currentWorkflow,
+        steps: prev.currentWorkflow.steps.map((step, i) =>
+          i === index ? value : step
+        ),
+      },
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const calculateTotalVolume = () => {
+    const metrics = formData.volumeMetrics;
+    const total = Object.values(metrics).reduce(
+      (sum, val) => sum + (parseInt(val) || 0),
+      0
+    );
+    return {
+      daily: total,
+      monthly: total * 22,
+    };
   };
 
   const handleSubmit = async () => {
