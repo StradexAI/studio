@@ -55,6 +55,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: "jwt",
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // Allow OAuth accounts to link to existing users
+      if (account?.provider === "google") {
+        return true;
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
