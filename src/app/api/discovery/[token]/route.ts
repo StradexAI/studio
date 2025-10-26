@@ -106,8 +106,16 @@ export async function GET(
       where: {
         discoveryToken: token,
       },
-      include: {
-        discoveryResponse: true,
+      select: {
+        id: true,
+        clientName: true,
+        status: true,
+        discoveryResponse: {
+          select: {
+            id: true,
+            status: true,
+          },
+        },
       },
     });
 
