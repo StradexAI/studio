@@ -142,11 +142,12 @@ export async function GET(
       alreadySubmitted,
     });
   } catch (error) {
+    const tokenValue = params.token;
     console.error("Error validating discovery token:", error);
     console.error("Error details:", {
       message: error instanceof Error ? error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
-      token,
+      token: tokenValue,
     });
     return NextResponse.json(
       {
