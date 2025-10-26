@@ -47,6 +47,7 @@ export default function DiscoverPage() {
         console.log("✅ Response status:", response.status);
         console.log("✅ Response ok:", response.ok);
 
+        // Check response status FIRST
         if (!response.ok) {
           // If API returns error (500 or other), proceed anyway
           console.warn(
@@ -64,8 +65,24 @@ export default function DiscoverPage() {
           return;
         }
 
-        const data = await response.json();
-        console.log("📦 Response data:", data);
+        // Only try to parse JSON if response is OK
+        let data;
+        try {
+          data = await response.json();
+          console.log("📦 Response data:", data);
+        } catch (jsonError) {
+          console.error("❌ Failed to parse JSON:", jsonError);
+          // If JSON parsing fails, still proceed
+          console.warn("⚠️ JSON parse failed, proceeding anyway");
+          setIsValid(true);
+          setProject({
+            id: "unknown",
+            clientName: "Unknown",
+            status: "UNKNOWN",
+          });
+          setIsValidating(false);
+          return;
+        }
 
         if (data.valid) {
           console.log("✅ Valid token, proceeding");
