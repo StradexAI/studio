@@ -27,14 +27,30 @@ export default function DiscoverPage() {
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
+    console.log("🔍 Discovery Page Mounted - Token:", token);
+
     const validateToken = async () => {
+      // Early return if no token
+      if (!token || token === "undefined") {
+        console.error("❌ Invalid token:", token);
+        setError("Invalid or missing token");
+        setIsValid(false);
+        setIsValidating(false);
+        return;
+      }
+
       try {
-        const response = await fetch(`/api/discovery/${token}`);
+        const apiUrl = `/api/discovery/${token}`;
+        console.log("📡 Fetching:", apiUrl);
+
+        const response = await fetch(apiUrl);
+        console.log("✅ Response status:", response.status);
+        console.log("✅ Response ok:", response.ok);
 
         if (!response.ok) {
           // If API returns error (500 or other), proceed anyway
           console.warn(
-            "API validation failed with status:",
+            "⚠️ API validation failed with status:",
             response.status,
             "proceeding with form anyway"
           );
@@ -44,17 +60,20 @@ export default function DiscoverPage() {
             clientName: "Unknown",
             status: "UNKNOWN",
           });
+          setIsValidating(false);
           return;
         }
 
         const data = await response.json();
+        console.log("📦 Response data:", data);
 
         if (data.valid) {
+          console.log("✅ Valid token, proceeding");
           setIsValid(true);
           setProject(data.project);
         } else {
           // If response says invalid but we got 200, still proceed
-          console.warn("API says link invalid but proceeding anyway");
+          console.warn("⚠️ API says link invalid but proceeding anyway");
           setIsValid(true);
           setProject({
             id: "unknown",
@@ -63,12 +82,14 @@ export default function DiscoverPage() {
           });
         }
       } catch (error) {
-        console.error("Failed to validate discovery link:", error);
+        console.error("❌ Failed to validate discovery link:", error);
         // On any error, allow the form to proceed
+        console.log("✅ Proceeding with form despite error");
         setIsValid(true);
         setProject({ id: "unknown", clientName: "Unknown", status: "UNKNOWN" });
       } finally {
         setIsValidating(false);
+        console.log("🏁 Validation complete, isValid:", isValid);
       }
     };
 
