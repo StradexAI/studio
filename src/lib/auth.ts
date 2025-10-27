@@ -15,9 +15,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: "jwt",
   },
   callbacks: {
-    async signIn({ account }) {
+    async signIn({ account, profile }) {
       // Only allow Google OAuth
-      return account?.provider === "google";
+      if (account?.provider !== "google") {
+        return false;
+      }
+      return true;
     },
     async jwt({ token, user }) {
       if (user) {
