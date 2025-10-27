@@ -15,32 +15,19 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
+    console.log("🔵 Button clicked, starting Google sign in...");
     setIsLoading(true);
     setError("");
-    try {
-      const result = await signIn("google", {
-        callbackUrl: "/dashboard",
-        redirect: false,
-      });
 
-      console.log("Sign in result:", result);
-
-      if (result?.error) {
-        setError(`Authentication error: ${result.error}`);
-        setIsLoading(false);
-      } else if (result?.ok && result?.url) {
-        // Redirect manually if redirect is false
-        window.location.href = result.url;
-      } else {
-        setError("Unexpected response from authentication");
-        setIsLoading(false);
-      }
-    } catch (err) {
-      console.error("Sign in error:", err);
-      setError("An error occurred. Please try again.");
+    // Use signIn with redirect true (default behavior for OAuth)
+    signIn("google", {
+      callbackUrl: "/dashboard",
+    }).catch((err) => {
+      console.error("❌ Sign in error:", err);
+      setError("Failed to start authentication. Please try again.");
       setIsLoading(false);
-    }
+    });
   };
 
   return (
