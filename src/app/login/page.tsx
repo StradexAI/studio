@@ -19,8 +19,25 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
     try {
-      await signIn("google", { callbackUrl: "/dashboard" });
-    } catch {
+      const result = await signIn("google", {
+        callbackUrl: "/dashboard",
+        redirect: false,
+      });
+
+      console.log("Sign in result:", result);
+
+      if (result?.error) {
+        setError(`Authentication error: ${result.error}`);
+        setIsLoading(false);
+      } else if (result?.ok && result?.url) {
+        // Redirect manually if redirect is false
+        window.location.href = result.url;
+      } else {
+        setError("Unexpected response from authentication");
+        setIsLoading(false);
+      }
+    } catch (err) {
+      console.error("Sign in error:", err);
       setError("An error occurred. Please try again.");
       setIsLoading(false);
     }
