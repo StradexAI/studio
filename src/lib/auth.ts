@@ -16,40 +16,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: "jwt",
   },
   callbacks: {
-    async signIn({ account, profile, user }) {
+    async signIn({ account, user }) {
       // Only allow Google OAuth
       if (account?.provider !== "google") {
         return false;
       }
 
-      // Allow Google OAuth to link with existing users by email
-      if (account?.provider === "google" && user.email) {
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email },
-        });
-
-        if (existingUser) {
-          // Link the OAuth account to the existing user
-          await prisma.account.upsert({
-            where: {
-              provider_providerAccountId: {
-                provider: account.provider,
-                providerAccountId: account.providerAccountId,
-              },
-            },
-            update: {
-              userId: existingUser.id,
-            },
-            create: {
-              userId: existingUser.id,
-              type: account.type,
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
-            },
-          });
-        }
-      }
-
+      // Let PrismaAdapter handle account linking automatically
+      // We just need to ensure the user is allowed
       return true;
     },
     async jwt({ token, user }) {
