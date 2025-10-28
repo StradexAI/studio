@@ -589,6 +589,7 @@ export default function DiscoveryForm({ project, token }: DiscoveryFormProps) {
               </p>
             </div>
 
+            {/* Temporarily removed primaryDepartment field - not in schema
             <div>
               <Label htmlFor="primaryDepartment">Primary Department *</Label>
               <select
@@ -613,6 +614,7 @@ export default function DiscoveryForm({ project, token }: DiscoveryFormProps) {
                 <option value="other">Other</option>
               </select>
             </div>
+            */}
 
             <div>
               <Label>What do you want your agent to do? *</Label>
@@ -620,7 +622,7 @@ export default function DiscoveryForm({ project, token }: DiscoveryFormProps) {
                 Select all that apply
               </p>
               <div className="space-y-3">
-                {getUseCaseOptions(formData.primaryDepartment).map((option) => (
+                {getUseCaseOptions("").map((option) => (
                   <div
                     key={option.value}
                     className="flex items-center space-x-3"
