@@ -110,6 +110,18 @@ export default function DiscoveryForm({ project, token }: DiscoveryFormProps) {
     
     // Additional fields
     useCases: [] as string[],
+    visionDescription: "",
+    primaryObjective: "",
+    automationTarget: "",
+    successDefinition: "",
+    currentMetrics: "",
+    monthlyVolume: "",
+    dataStorageLocations: [] as string[],
+    systemsToIntegrate: "",
+    targetLaunchDate: "",
+    budgetRange: "",
+    requirements: "",
+    bestTimeToReach: "",
   });
 
   const totalSections = 12;
