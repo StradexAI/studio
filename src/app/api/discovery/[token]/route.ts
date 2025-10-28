@@ -93,18 +93,22 @@ export async function GET(
 ) {
   try {
     const { token } = params;
+    
+    // Normalize token - remove dashes and convert to lowercase
+    const normalizedToken = token.replace(/-/g, "").toLowerCase();
 
     // Debug: Log environment and connection info
     console.log("Discovery API Debug:", {
-      token,
+      originalToken: token,
+      normalizedToken,
       hasDatabaseUrl: !!process.env.DATABASE_URL,
       nodeEnv: process.env.NODE_ENV,
     });
 
-    // Find project by discovery token
-    const project = await prisma.project.findUnique({
+    // Try to find project with normalized token or with dashes
+    let project = await prisma.project.findUnique({
       where: {
-        discoveryToken: token,
+        discoveryToken: normalizedToken,
       },
       select: {
         id: true,
@@ -118,6 +122,26 @@ export async function GET(
         },
       },
     });
+
+    // If not found, try with original token (in case it's a legacy format)
+    if (!project) {
+      project = await prisma.project.findUnique({
+        where: {
+          discoveryToken: token,
+        },
+        select: {
+          id: true,
+          clientName: true,
+          status: true,
+          discoveryResponse: {
+            select: {
+              id: true,
+              status: true,
+            },
+          },
+        },
+      });
+    }
 
     if (!project) {
       return NextResponse.json(
