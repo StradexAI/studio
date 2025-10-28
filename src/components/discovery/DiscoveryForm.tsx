@@ -107,6 +107,9 @@ export default function DiscoveryForm({ project, token }: DiscoveryFormProps) {
     additionalContext: "",
     referralSource: "",
     wantsConsultation: "",
+    
+    // Additional fields
+    useCases: [] as string[],
   });
 
   const totalSections = 12;
@@ -629,7 +632,7 @@ export default function DiscoveryForm({ project, token }: DiscoveryFormProps) {
                   >
                     <Checkbox
                       id={option.value}
-                      checked={formData.useCases.includes(option.value)}
+                      checked={(formData.useCases || []).includes(option.value)}
                       onCheckedChange={(checked) =>
                         handleCheckboxChange(
                           "useCases",
